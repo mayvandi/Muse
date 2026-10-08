@@ -1,20 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { viteStaticCopy } from 'vite-plugin-static-copy';
 
 export default defineConfig({
-  plugins: [
-    react(),
-    viteStaticCopy({
-      targets: [
-        {
-          src: 'node_modules/@litert-lm/core/wasm/*',
-          dest: 'wasm',
-        },
-      ],
-    }),
-  ],
-  optimizeDeps: {
-    exclude: ['@litert-lm/core'],
-  },
+  plugins: [react()],
 });
