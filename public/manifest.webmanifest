@@ -1,9 +1,0 @@
-{
-  "name": "Muse",
-  "short_name": "Muse",
-  "description": "Private notes with on-device AI",
-  "start_url": "/notes",
-  "display": "standalone",
-  "theme_color": "#FAF9F5",
-  "background_color": "#FAF9F5"
-}
