@@ -7,13 +7,10 @@ ctx.onmessage = async (e: any) => {
   try {
     const root = await navigator.storage.getDirectory();
     const handle = await root.getFileHandle(filename, { create: true });
-    const access = await (handle as any).createSyncAccessHandle();
+    const writable = await handle.createWritable();
 
     const res = await fetch(url);
     if (!res.body) throw new Error('No response body');
-
-    const total = Number(res.headers.get('Content-Length') || 0);
-    if (total > 0) access.truncate(total);
 
     const reader = res.body.getReader();
     let offset = 0;
@@ -21,13 +18,13 @@ ctx.onmessage = async (e: any) => {
     while (true) {
       const r = await reader.read();
       if (r.done) break;
-      access.write(r.value.slice(), { at: offset });
+      // Gunakan slice() untuk memaksa copy dengan byteOffset=0
+      await writable.write(r.value.slice());
       offset += r.value.length;
-      ctx.postMessage({ type: 'progress', loaded: offset, total: total });
+      ctx.postMessage({ type: 'progress', loaded: offset });
     }
 
-    access.flush();
-    access.close();
+    await writable.close();
     ctx.postMessage({ type: 'done', size: offset });
   } catch (err: any) {
     ctx.postMessage({ type: 'error', message: String(err) });
