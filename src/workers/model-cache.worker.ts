@@ -18,6 +18,8 @@ ctx.onmessage = async (e) => {
     if (!res.ok || !res.body) throw new Error(`Fetch failed: ${res.status}`);
 
     const total = parseInt(res.headers.get('Content-Length') || '0', 10);
+    if (total > 0) access.truncate(total);
+    
     const reader = res.body.getReader();
     let offset = 0;
     let lastReport = 0;
