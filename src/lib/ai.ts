@@ -78,7 +78,7 @@ export async function generate(o: {
   try {
     engine.resetChat();
 
-    const reply = await engine.chat.completions.create({
+    const reply = (await engine.chat.completions.create({
       messages: [
         { role: 'system', content: o.system },
         { role: 'user', content: o.prompt },
@@ -87,7 +87,7 @@ export async function generate(o: {
       max_tokens: 500,
       stream: true,
       extra_body: { enable_thinking: false },
-    } as any);
+    } as any)) as any;
 
     let full = '';
     for await (const chunk of reply) {
