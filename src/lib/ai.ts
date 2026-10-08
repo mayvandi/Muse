@@ -62,7 +62,7 @@ export async function loadModel(): Promise<void> {
     engine = await CreateMLCEngine(MODEL_ID, {
       appConfig: {
         ...prebuiltAppConfig,
-        cacheBackend: 'cache',
+        cacheBackend: 'indexeddb',
       },
       initProgressCallback: (p) => {
         const percent = Math.min(100, Math.round((p.progress || 0) * 100));
