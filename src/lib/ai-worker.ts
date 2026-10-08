@@ -2,7 +2,7 @@
 import { Engine, loadLiteRtLm } from '@litert-lm/core';
 
 const MODEL_URL =
-  'https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm/resolve/main/gemma-it-web.litertlm';
+  'https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm/resolve/main/gemma-4-E4B-it-web.litertlm';
 
 // Minimal local types so a library typing difference can't break the build.
 interface Conv { sendMessageStreaming(t: string): AsyncIterable<unknown>; delete?(): Promise<void> }
@@ -15,8 +15,8 @@ let queue: Promise<void> = Promise.resolve(); // one generation at a time
 
 async function init() {
   try {
-    // Tell LiteRT-LM where the WASM files are. They're in /public/wasm/, served at /wasm/.
-    await loadLiteRtLm('/wasm/litertlm_wasm_compat_internal.js');
+    // Absolute URL so it works inside a Worker.
+    await loadLiteRtLm(`${self.location.origin}/wasm/litertlm_wasm_compat_internal.js`);
 
     engine = (await Engine.create({
       model: MODEL_URL,
