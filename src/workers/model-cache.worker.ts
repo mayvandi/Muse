@@ -21,7 +21,7 @@ ctx.onmessage = async (e: any) => {
     while (true) {
       const r = await reader.read();
       if (r.done) break;
-      access.write(r.value, { at: offset });
+      access.write(r.value.slice(), { at: offset });
       offset += r.value.length;
       ctx.postMessage({ type: 'progress', loaded: offset, total: total });
     }
