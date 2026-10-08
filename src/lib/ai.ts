@@ -1,7 +1,7 @@
 import { Engine, loadLiteRtLm, type EngineSettings } from '@litert-lm/core';
 
 const MODEL_URL =
-  'https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm/resolve/main/gemma-4-E4B-it-web.litertlm';
+  'https://huggingface.co/litert-community/gemma-3-1b-it-litert-lm/resolve/main/gemma-3-1b-it-web.litertlm';
 
 export type AiStatus = 'idle' | 'loading' | 'ready' | 'error';
 
