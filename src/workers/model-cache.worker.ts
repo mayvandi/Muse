@@ -12,6 +12,9 @@ ctx.onmessage = async (e: any) => {
     const res = await fetch(url);
     if (!res.body) throw new Error('No response body');
 
+    const total = Number(res.headers.get('Content-Length') || 0);
+    if (total > 0) access.truncate(total);
+
     const reader = res.body.getReader();
     let offset = 0;
 
@@ -20,7 +23,7 @@ ctx.onmessage = async (e: any) => {
       if (r.done) break;
       access.write(r.value, { at: offset });
       offset += r.value.length;
-      ctx.postMessage({ type: 'progress', loaded: offset });
+      ctx.postMessage({ type: 'progress', loaded: offset, total: total });
     }
 
     access.flush();
