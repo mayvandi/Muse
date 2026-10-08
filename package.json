@@ -9,9 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@litert-lm/core": "^0.17.1",
-    "@mlc-ai/web-llm": "^0.2.85",
-    "gemma-webgpu": "^0.1.0",
+    "@huggingface/transformers": "^4.3.0",
     "idb": "^8.0.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
