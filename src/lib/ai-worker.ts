@@ -16,7 +16,7 @@ let queue: Promise<void> = Promise.resolve(); // one generation at a time
 async function init() {
   try {
     // Tell LiteRT-LM where the WASM files are. They're in /public/wasm/, served at /wasm/.
-    await loadLiteRtLm('/wasm/');
+    await loadLiteRtLm('/wasm/litertlm_wasm_compat_internal.js');
 
     engine = (await Engine.create({
       model: MODEL_URL,
