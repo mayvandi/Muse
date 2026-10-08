@@ -1,7 +1,7 @@
 import { Engine, loadLiteRtLm, type EngineSettings } from '@litert-lm/core';
 
 const MODEL_URL =
-  'https://huggingface.co/litert-community/gemma-3-1b-it-litert-lm/resolve/main/gemma-3-1b-it-web.litertlm';
+  'https://huggingface.co/litert-community/Gemma3-1B-IT/resolve/main/Gemma3-1B-IT_multi-prefill-seq_q4_ekv4096.litertlm';
 
 export type AiStatus = 'idle' | 'loading' | 'ready' | 'error';
 
