@@ -18,8 +18,9 @@ self.addEventListener('fetch', (e) => {
 async function handleModel(request) {
   const cache = await caches.open(CACHE_NAME);
   const cached = await cache.match(MODEL_URL);
+
   if (!cached) {
-    return new Response('not cached', { status: 404 });
+    return fetch(request);
   }
 
   const blob = await cached.blob();
