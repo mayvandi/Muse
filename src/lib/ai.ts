@@ -111,7 +111,7 @@ export async function generate(o: {
       max_tokens: 500,
       stream: true,
       extra_body: { enable_thinking: false },
-    } as any)) as AsyncIterable<any>;
+    } as any)) as unknown as AsyncIterable<any>;
 
     let full = '';
     for await (const chunk of reply) {
