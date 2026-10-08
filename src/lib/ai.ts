@@ -1,7 +1,7 @@
 import { Engine, loadLiteRtLm, type EngineSettings } from '@litert-lm/core';
 
 const MODEL_URL =
-  'https://api.codetabs.com/v1/proxy?quest=https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it-web.litertlm';
+  'https://hf-mirror.com/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it-web.litertlm';
 
 export type AiStatus = 'idle' | 'loading' | 'ready' | 'error';
 
