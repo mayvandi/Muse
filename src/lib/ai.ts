@@ -1,6 +1,6 @@
 import { CreateMLCEngine, type MLCEngine } from '@mlc-ai/web-llm';
 
-const MODEL_ID = 'Llama-3.2-1B-Instruct-q4f16_1-MLC';
+const MODEL_ID = 'Qwen3-0.6B-q4f16_1-MLC';
 
 export type AiStatus = 'idle' | 'loading' | 'ready' | 'error';
 
@@ -37,7 +37,13 @@ export async function loadModel(): Promise<void> {
   set({ status: 'loading', error: '', progress: 0 });
 
   try {
+    import { prebuiltAppConfig } from '@mlc-ai/web-llm';
+
     engine = await CreateMLCEngine(MODEL_ID, {
+      appConfig: {
+        ...prebuiltAppConfig,
+        cacheBackend: 'indexeddb',
+      },
       initProgressCallback: (p) => {
         const percent = Math.round((p.progress || 0) * 100);
         set({ progress: percent });
