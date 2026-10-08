@@ -22,16 +22,24 @@ const set = (patch: Partial<typeof state>) => {
 export const getState = () => state;
 export const subscribe = (l: () => void) => {
   listeners.add(l);
-  return () => { listeners.delete(l); };
+  return () => {
+    listeners.delete(l);
+  };
 };
 
 async function ensureServiceWorker(): Promise<void> {
-  if (!('serviceWorker' in navigator)) throw new Error('Service Worker not supported');
+  if (!('serviceWorker' in navigator)) {
+    throw new Error('Service Worker not supported');
+  }
   await navigator.serviceWorker.register('/sw.js');
   await navigator.serviceWorker.ready;
   if (!navigator.serviceWorker.controller) {
     await new Promise<void>((resolve) => {
-      navigator.serviceWorker.addEventListener('controllerchange', () => resolve(), { once: true });
+      navigator.serviceWorker.addEventListener(
+        'controllerchange',
+        () => resolve(),
+        { once: true }
+      );
       setTimeout(resolve, 2000);
     });
   }
@@ -48,38 +56,44 @@ async function ensureModelCached(): Promise<void> {
 
   set({ progress: 0 });
   const response = await fetch(MODEL_URL);
-  if (!response.ok || !response.body) throw new Error('Download failed: ' + response.status);
+  if (!response.ok || !response.body) {
+    throw new Error('Download failed: ' + response.status);
+  }
 
   const total = Number(response.headers.get('Content-Length') || 0);
-  const [forCache, forProgress] = response.body.tee();
+  let loaded = 0;
 
-  const cachePromise = cache.put(
-    MODEL_URL,
-    new Response(forCache, {
+  const progressStream = new TransformStream({
+    transform(chunk, controller) {
+      loaded += chunk.length;
+      if (total) {
+        set({ progress: Math.round((loaded / total) * 100) });
+      }
+      controller.enqueue(chunk);
+    },
+  });
+
+  const streamedResponse = new Response(
+    response.body.pipeThrough(progressStream),
+    {
       headers: {
         'Content-Type': 'application/octet-stream',
         'Content-Length': String(total),
       },
-    })
+    }
   );
 
-  const reader = forProgress.getReader();
-  let loaded = 0;
-  while (true) {
-    const r = await reader.read();
-    if (r.done) break;
-    loaded += r.value.length;
-    if (total) set({ progress: Math.round((loaded / total) * 100) });
-  }
-
-  await cachePromise;
+  await cache.put(MODEL_URL, streamedResponse);
   set({ progress: 100 });
 }
 
 export async function loadModel(): Promise<void> {
   if (state.status === 'ready') return;
   if (!(navigator as any).gpu) {
-    set({ status: 'error', error: 'WebGPU not available. Needs iOS 26+ Safari.' });
+    set({
+      status: 'error',
+      error: 'WebGPU not available. Needs iOS 26+ Safari.',
+    });
     return;
   }
 
