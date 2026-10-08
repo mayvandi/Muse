@@ -1,6 +1,22 @@
-import { CreateMLCEngine, prebuiltAppConfig, type MLCEngine } from '@mlc-ai/web-llm';
+import {
+  CreateMLCEngine,
+  prebuiltAppConfig,
+  deleteModelAllInfoInCache,
+  type MLCEngine,
+} from '@mlc-ai/web-llm';
 
 const MODEL_ID = 'Qwen3-0.6B-q4f16_1-MLC';
+
+const OLD_MODELS = [
+  'Phi-4-mini-instruct-q4f16_1-MLC',
+  'Llama-3.2-1B-Instruct-q4f16_1-MLC',
+  'Llama-3.2-3B-Instruct-q4f16_1-MLC',
+  'Qwen3-1.7B-q4f16_1-MLC',
+  'Qwen2.5-0.5B-Instruct-q4f16_1-MLC',
+  'TinyLlama-1.1B-Chat-v1.0-q4f16_1-MLC',
+  'SmolLM2-360M-Instruct-q4f16_1-MLC',
+  'Gemma-2-2B-Instruct-q4f16_1-MLC',
+];
 
 export type AiStatus = 'idle' | 'loading' | 'ready' | 'error';
 
@@ -25,6 +41,12 @@ export const subscribe = (l: () => void) => {
   return () => { listeners.delete(l); };
 };
 
+async function cleanupOldModels(): Promise<void> {
+  for (const m of OLD_MODELS) {
+    try { await deleteModelAllInfoInCache(m); } catch {}
+  }
+}
+
 export async function loadModel(): Promise<void> {
   if (state.status === 'ready' || state.status === 'loading') return;
   if (!(navigator as any).gpu) {
@@ -35,10 +57,12 @@ export async function loadModel(): Promise<void> {
   lastProgress = -1;
 
   try {
+    await cleanupOldModels();
+
     engine = await CreateMLCEngine(MODEL_ID, {
       appConfig: {
         ...prebuiltAppConfig,
-        cacheBackend: 'indexeddb',
+        cacheBackend: 'cache',
       },
       initProgressCallback: (p) => {
         const percent = Math.min(100, Math.round((p.progress || 0) * 100));
@@ -84,14 +108,14 @@ export async function generate(o: {
         { role: 'user', content: o.prompt },
       ],
       temperature: 0.7,
-      max_tokens: 1000,
+      max_tokens: 500,
       stream: true,
-      extra_body: { enable_thinking: true },
-    } as any)) as any;
+      extra_body: { enable_thinking: false },
+    } as any)) as AsyncIterable<any>;
 
     let full = '';
     for await (const chunk of reply) {
-      const token = chunk.choices[0]?.delta?.content || '';
+      const token = chunk?.choices?.[0]?.delta?.content || '';
       if (token) {
         full += token;
         o.onToken?.(token);
