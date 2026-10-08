@@ -19,7 +19,7 @@ export const subscribe = (l: () => void) => {
 
 export async function loadModel(): Promise<void> {
   if (state.status === 'ready') return;
-  if (!navigator.gpu) {
+    if (!(navigator as any).gpu) {
     set('error', 'WebGPU tidak tersedia. Aubin butuh iOS 26+ Safari.');
     return;
   }
