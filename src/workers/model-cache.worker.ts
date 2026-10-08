@@ -19,7 +19,7 @@ ctx.onmessage = async (e) => {
 
     const total = parseInt(res.headers.get('Content-Length') || '0', 10);
     if (total > 0) access.truncate(total);
-    
+
     const reader = res.body.getReader();
     let offset = 0;
     let lastReport = 0;
@@ -27,15 +27,27 @@ ctx.onmessage = async (e) => {
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
+
+      // Safari: ensure we never write past allocated size
+      if (total > 0 && offset + value.length > total) {
+        offset const remaining = total - offset;
+        if (remaining > 0) {
+          access.write(value.subarray(0, remaining), { at: offset });
+          offset += remaining;
+        }
+        break;
+      }
+
       access.write(value, { at: offset });
       offset += value.length;
+
       if (offset - lastReport > 4 * 1024 * 1024) {
         lastReport = offset;
-        ctx.postMessage({ type: 'progress', loaded: offset, total });
+        ctx.postMessage({ type: 'progress', loaded:, total });
       }
     }
 
-    access.truncate(offset);
+    if (total > 0) access.truncate(offset);
     access.flush();
     access.close();
     ctx.postMessage({ type: 'done', size: offset });
