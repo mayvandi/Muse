@@ -7,9 +7,11 @@ ctx.onmessage = async (e: any) => {
   try {
     const root = await navigator.storage.getDirectory();
     const handle = await root.getFileHandle(filename, { create: true });
-    const access = await handle.createSyncAccessHandle();
+    const access = await (handle as any).createSyncAccessHandle();
 
     const res = await fetch(url);
+    if (!res.body) throw new Error('No response body');
+
     const reader = res.body.getReader();
     let offset = 0;
 
