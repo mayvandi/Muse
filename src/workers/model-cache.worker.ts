@@ -12,7 +12,7 @@ ctx.onmessage = async (e) => {
   try {
     const root = await navigator.storage.getDirectory();
     const handle = await root.getFileHandle(filename, { create: true });
-    const access = await handle.createSyncAccessHandle();
+    const access = await (handle as any).createSyncAccessHandle();
 
     const res = await fetch(url, { redirect: 'follow' });
     if (!res.ok || !res.body) throw new Error(`Fetch failed: ${res.status}`);
