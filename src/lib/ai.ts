@@ -1,6 +1,6 @@
-import { CreateMLCEngine, type MLCEngine } from '@mlc-ai/web-llm';
+import { CreateMLCEngine, prebuiltAppConfig, type MLCEngine } from '@mlc-ai/web-llm';
 
-const MODEL_ID = 'Qwen3-0.6B-q4f16_1-MLC';
+const MODEL_ID = 'Llama-3.2-1B-Instruct-q4f16_1-MLC';
 
 export type AiStatus = 'idle' | 'loading' | 'ready' | 'error';
 
@@ -20,25 +20,18 @@ const set = (patch: Partial<typeof state>) => {
 export const getState = () => state;
 export const subscribe = (l: () => void) => {
   listeners.add(l);
-  return () => {
-    listeners.delete(l);
-  };
+  return () => { listeners.delete(l); };
 };
 
 export async function loadModel(): Promise<void> {
   if (state.status === 'ready') return;
   if (!(navigator as any).gpu) {
-    set({
-      status: 'error',
-      error: 'WebGPU tidak tersedia. Butuh iOS 26+ Safari.',
-    });
+    set({ status: 'error', error: 'WebGPU tidak tersedia. Butuh iOS 26+ Safari.' });
     return;
   }
   set({ status: 'loading', error: '', progress: 0 });
 
   try {
-    import { prebuiltAppConfig } from '@mlc-ai/web-llm';
-
     engine = await CreateMLCEngine(MODEL_ID, {
       appConfig: {
         ...prebuiltAppConfig,
