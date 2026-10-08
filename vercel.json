@@ -1,20 +1,20 @@
-{
-  "routes": [
-    { "handle": "filesystem" },
-    { "src": "/.*", "dest": "/index.html" }
-  ]
-}
-{
-  "routes": [
-    { "handle": "filesystem" },
-    { "src": "/.*", "dest": "/index.html" }
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { viteStaticCopy } from 'vite-plugin-static-copy';
+
+export default defineConfig({
+  plugins: [
+    react(),
+    viteStaticCopy({
+      targets: [
+        {
+          src: 'node_modules/@litert-lm/core/wasm/*',
+          dest: 'wasm',
+        },
+      ],
+    }),
   ],
-  "headers": [
-    {
-      "source": "/wasm/(.*).wasm",
-      "headers": [
-        { "key": "Content-Type", "value": "application/wasm" }
-      ]
-    }
-  ]
-}
+  optimizeDeps: {
+    exclude: ['@litert-lm/core'],
+  },
+});
