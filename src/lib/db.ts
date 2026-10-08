@@ -1,37 +1,30 @@
-import { useEffect, useState } from 'react';
-import { NavLink, Navigate, Route, Routes } from 'react-router-dom';
-import NotesPage from './pages/NotesPage';
-import AskPage from './pages/AskPage';
+// Generic IndexedDB helpers. No notes-specific logic; add a store name to reuse for other data.
+import { openDB, type IDBPDatabase } from 'idb';
 
-export default function App() {
-  const [dark, setDark] = useState(() => localStorage.getItem('muse-theme') === 'dark');
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', dark);
-    localStorage.setItem('muse-theme', dark ? 'dark' : 'light');
-  }, [dark]);
+export const STORES = ['notes', 'facts'] as const;
+export type StoreName = (typeof STORES)[number];
 
-  const tab = ({ isActive }: { isActive: boolean }) =>
-    `flex-1 min-h-[44px] flex items-center justify-center ${isActive ? 'text-accent font-medium' : 'text-muted'}`;
+let dbp: Promise<IDBPDatabase> | null = null;
+const db = () =>
+  (dbp ??= openDB('muse', 1, {
+    upgrade(d) { STORES.forEach((s) => d.createObjectStore(s, { keyPath: 'id' })); },
+  }));
 
-  return (
-    <div className="min-h-screen" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-      <header className="flex items-center justify-between px-4 h-12 max-w-[720px] mx-auto">
-        <h1 className="text-xl font-serif text-accent">Muse</h1>
-        <button className="min-h-[44px] min-w-[44px] text-muted" onClick={() => setDark(!dark)} aria-label="Toggle dark mode">
-          {dark ? 'Light' : 'Dark'}
-        </button>
-      </header>
-      <main className="max-w-[720px] mx-auto px-4 pb-28">
-        <Routes>
-          <Route path="/" element={<Navigate to="/notes" replace />} />
-          <Route path="/notes" element={<NotesPage />} />
-          <Route path="/ask" element={<AskPage />} />
-        </Routes>
-      </main>
-      <nav className="fixed bottom-0 inset-x-0 flex bg-surface border-t border-line" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-        <NavLink to="/notes" className={tab}>Notes</NavLink>
-        <NavLink to="/ask" className={tab}>Ask Muse</NavLink>
-      </nav>
-    </div>
-  );
+export async function put<T extends { id: string }>(store: StoreName, value: T): Promise<void> {
+  await (await db()).put(store, value);
+}
+export async function getAll<T>(store: StoreName): Promise<T[]> {
+  return (await (await db()).getAll(store)) as T[];
+}
+export async function remove(store: StoreName, id: string): Promise<void> {
+  await (await db()).delete(store, id);
+}
+export async function exportAll(): Promise<string> {
+  const out: Record<string, unknown[]> = {};
+  for (const s of STORES) out[s] = await getAll(s);
+  return JSON.stringify(out);
+}
+export async function importAll(json: string): Promise<void> {
+  const data = JSON.parse(json) as Record<string, { id: string }[]>;
+  for (const s of STORES) for (const v of data[s] ?? []) await put(s, v);
 }
