@@ -1,13 +1,19 @@
-import { createGemmaEngine } from 'gemma-webgpu';
+import { CreateMLCEngine, type MLCEngine } from '@mlc-ai/web-llm';
+
+const MODEL_ID = 'Phi-4-mini-instruct-q4f16_1-MLC';
 
 export type AiStatus = 'idle' | 'loading' | 'ready' | 'error';
 
-let engine: any = null;
-let state: { status: AiStatus; error: string } = { status: 'idle', error: '' };
+let engine: MLCEngine | null = null;
+let state: { status: AiStatus; error: string; progress: number } = {
+  status: 'idle',
+  error: '',
+  progress: 0,
+};
 const listeners = new Set<() => void>();
 
-const set = (status: AiStatus, error = '') => {
-  state = { status, error };
+const set = (patch: Partial<typeof state>) => {
+  state = { ...state, ...patch };
   listeners.forEach((l) => l());
 };
 
@@ -20,15 +26,21 @@ export const subscribe = (l: () => void) => {
 export async function loadModel(): Promise<void> {
   if (state.status === 'ready') return;
   if (!(navigator as any).gpu) {
-    set('error', 'WebGPU not available.');
+    set({ status: 'error', error: 'WebGPU tidak tersedia. Butuh iOS 26+ Safari.' });
     return;
   }
-  set('loading');
+  set({ status: 'loading', error: '', progress: 0 });
+
   try {
-    engine = await createGemmaEngine({ model: '270m' });
-    set('ready');
+    engine = await CreateMLCEngine(MODEL_ID, {
+      initProgressCallback: (p) => {
+        const percent = Math.round((p.progress || 0) * 100);
+        set({ progress: percent });
+      },
+    });
+    set({ status: 'ready', progress: 100 });
   } catch (e) {
-    set('error', (e as Error).message);
+    set({ status: 'error', error: (e as Error).message });
   }
 }
 
@@ -37,14 +49,24 @@ export async function generate(o: {
   prompt: string;
   onToken?: (t: string) => void;
 }): Promise<string> {
-  if (state.status !== 'ready' || !engine) {
-    throw new Error('Model not loaded.');
-  }
-  engine.addUserMessage(o.prompt);
+  if (!engine) throw new Error('Model belum dimuat.');
+
+  const reply = await engine.chat.completions.create({
+    messages: [
+      { role: 'system', content: o.system },
+      { role: 'user', content: o.prompt },
+    ],
+    temperature: 0.7,
+    stream: true,
+  });
+
   let full = '';
-  for await (const token of engine.generate({ temperature: 0.7 })) {
-    full += token;
-    o.onToken?.(token);
+  for await (const chunk of reply) {
+    const token = chunk.choices[0]?.delta?.content || '';
+    if (token) {
+      full += token;
+      o.onToken?.(token);
+    }
   }
   return full;
 }
