@@ -1,111 +1,34 @@
 import { createGemmaEngine } from 'gemma-webgpu';
 
-const CACHE_NAME = 'aubin-model-v1';
-const MODEL_URL =
-  'https://huggingface.co/unsloth/gemma-3-270m-it-GGUF/resolve/main/gemma-3-270m-it-Q8_0.gguf';
-
 export type AiStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 let engine: any = null;
-let state: { status: AiStatus; error: string; progress: number } = {
-  status: 'idle',
-  error: '',
-  progress: 0,
-};
+let state: { status: AiStatus; error: string } = { status: 'idle', error: '' };
 const listeners = new Set<() => void>();
 
-const set = (patch: Partial<typeof state>) => {
-  state = { ...state, ...patch };
+const set = (status: AiStatus, error = '') => {
+  state = { status, error };
   listeners.forEach((l) => l());
 };
 
 export const getState = () => state;
 export const subscribe = (l: () => void) => {
   listeners.add(l);
-  return () => {
-    listeners.delete(l);
-  };
+  return () => { listeners.delete(l); };
 };
-
-async function ensureServiceWorker(): Promise<void> {
-  if (!('serviceWorker' in navigator)) {
-    throw new Error('Service Worker not supported');
-  }
-  await navigator.serviceWorker.register('/sw.js');
-  await navigator.serviceWorker.ready;
-  if (!navigator.serviceWorker.controller) {
-    await new Promise<void>((resolve) => {
-      navigator.serviceWorker.addEventListener(
-        'controllerchange',
-        () => resolve(),
-        { once: true }
-      );
-      setTimeout(resolve, 2000);
-    });
-  }
-}
-
-async function ensureModelCached(): Promise<void> {
-  const cache = await caches.open(CACHE_NAME);
-  const existing = await cache.match(MODEL_URL);
-  if (existing) {
-    const size = Number(existing.headers.get('Content-Length') || 0);
-    if (size > 100 * 1024 * 1024) return;
-    await cache.delete(MODEL_URL);
-  }
-
-  set({ progress: 0 });
-  const response = await fetch(MODEL_URL);
-  if (!response.ok || !response.body) {
-    throw new Error('Download failed: ' + response.status);
-  }
-
-  const total = Number(response.headers.get('Content-Length') || 0);
-  let loaded = 0;
-
-  const progressStream = new TransformStream({
-    transform(chunk, controller) {
-      loaded += chunk.length;
-      if (total) {
-        set({ progress: Math.round((loaded / total) * 100) });
-      }
-      controller.enqueue(chunk);
-    },
-  });
-
-  const streamedResponse = new Response(
-    response.body.pipeThrough(progressStream),
-    {
-      headers: {
-        'Content-Type': 'application/octet-stream',
-        'Content-Length': String(total),
-      },
-    }
-  );
-
-  await cache.put(MODEL_URL, streamedResponse);
-  set({ progress: 100 });
-}
 
 export async function loadModel(): Promise<void> {
   if (state.status === 'ready') return;
   if (!(navigator as any).gpu) {
-    set({
-      status: 'error',
-      error: 'WebGPU not available. Needs iOS 26+ Safari.',
-    });
+    set('error', 'WebGPU not available.');
     return;
   }
-
-  set({ status: 'loading', error: '', progress: 0 });
-
+  set('loading');
   try {
-    await ensureServiceWorker();
-    await ensureModelCached();
     engine = await createGemmaEngine({ model: '270m' });
-    set({ status: 'ready', progress: 100 });
+    set('ready');
   } catch (e) {
-    set({ status: 'error', error: (e as Error).message });
+    set('error', (e as Error).message);
   }
 }
 
@@ -115,7 +38,7 @@ export async function generate(o: {
   onToken?: (t: string) => void;
 }): Promise<string> {
   if (state.status !== 'ready' || !engine) {
-    throw new Error('Model not loaded yet.');
+    throw new Error('Model not loaded.');
   }
   engine.addUserMessage(o.prompt);
   let full = '';
