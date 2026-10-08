@@ -1,6 +1,6 @@
 import { CreateMLCEngine, prebuiltAppConfig, type MLCEngine } from '@mlc-ai/web-llm';
 
-const MODEL_ID = 'Llama-3.2-1B-Instruct-q4f16_1-MLC';
+const MODEL_ID = 'Qwen3-0.6B-q4f16_1-MLC';
 
 export type AiStatus = 'idle' | 'loading' | 'ready' | 'error';
 
