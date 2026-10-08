@@ -1,6 +1,6 @@
 const CACHE_NAME = 'aubin-model-v1';
 const MODEL_URL =
-  'https://huggingface.co/unsloth/gemma-3-1b-it-GGUF/resolve/main/gemma-3-1b-it-Q8_0.gguf';
+  'https://huggingface.co/unsloth/gemma-3-270m-it-GGUF/resolve/main/gemma-3-270m-it-Q8_0.gguf';
 
 self.addEventListener('install', () => {
   self.skipWaiting();

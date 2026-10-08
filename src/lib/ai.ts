@@ -2,7 +2,7 @@ import { createGemmaEngine } from 'gemma-webgpu';
 
 const CACHE_NAME = 'aubin-model-v1';
 const MODEL_URL =
-  'https://huggingface.co/unsloth/gemma-3-1b-it-GGUF/resolve/main/gemma-3-1b-it-Q8_0.gguf';
+  'https://huggingface.co/unsloth/gemma-3-270m-it-GGUF/resolve/main/gemma-3-270m-it-Q8_0.gguf';
 
 export type AiStatus = 'idle' | 'loading' | 'ready' | 'error';
 
@@ -102,7 +102,7 @@ export async function loadModel(): Promise<void> {
   try {
     await ensureServiceWorker();
     await ensureModelCached();
-    engine = await createGemmaEngine({ model: '1b' });
+    engine = await createGemmaEngine({ model: '270m' });
     set({ status: 'ready', progress: 100 });
   } catch (e) {
     set({ status: 'error', error: (e as Error).message });
