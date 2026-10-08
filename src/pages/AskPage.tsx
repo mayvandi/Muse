@@ -114,9 +114,26 @@ export default function AskPage() {
       </button>
 
       {answer && (
-        <div className="bg-surface border border-line rounded-xl p-4 whitespace-pre-wrap">
-          {answer}
-          {busy && <span className="ml-1 animate-pulse">▍</span>}
+        <div className="space-y-2">
+          {(() => {
+            const parts = answer.split(/<\/?think>/);
+            const thinking = (parts[1] || '').trim();
+            const clean = (parts[2] || parts[0] || '').trim();
+            return (
+              <>
+                {thinking && (
+                  <details className="bg-surface border border-line rounded-xl p-3 text-sm text-muted">
+                    <summary className="cursor-pointer">Muse's thinking</summary>
+                    <div className="mt-2 whitespace-pre-wrap">{thinking}</div>
+                  </details>
+                )}
+                <div className="bg-surface border border-line rounded-xl p-4 whitespace-pre-wrap">
+                  {clean}
+                  {busy && <span className="ml-1 animate-pulse">▍</span>}
+                </div>
+              </>
+            );
+          })()}
         </div>
       )}
     </section>

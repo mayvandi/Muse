@@ -84,9 +84,9 @@ export async function generate(o: {
         { role: 'user', content: o.prompt },
       ],
       temperature: 0.7,
-      max_tokens: 500,
+      max_tokens: 1000,
       stream: true,
-      extra_body: { enable_thinking: false },
+      extra_body: { enable_thinking: true },
     } as any)) as any;
 
     let full = '';
