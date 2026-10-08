@@ -23,7 +23,7 @@ export function loadModel(): Promise<void> {
   set('loading');
   ready = new Promise<void>((resolve, reject) => {
     initDone = { resolve, reject };
-    worker = new Worker(new URL('./ai-worker.ts', import.meta.url), { type: 'module' });
+    worker = new Worker(new URL('./ai-worker.ts', import.meta.url), );
     worker.onmessage = (e: MessageEvent) => {
       const m = e.data as { type: string; id?: number; text?: string; message?: string };
       if (m.type === 'ready') { set('ready'); initDone?.resolve(); }
