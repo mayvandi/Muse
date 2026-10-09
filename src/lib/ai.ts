@@ -1,6 +1,6 @@
 import { pipeline, TextStreamer, type PipelineType } from '@huggingface/transformers';
 
-const MODEL_ID = 'onnx-community/Qwen3.5-0.8B-ONNX';
+const MODEL_ID = 'onnx-community/SmolLM2-360M-Instruct-ONNX';
 
 export type AiStatus = 'idle' | 'loading' | 'ready' | 'error';
 
