@@ -1,6 +1,9 @@
-import { pipeline, TextStreamer, type PipelineType } from '@huggingface/transformers';
+import { pipeline, TextStreamer, env, type PipelineType } from '@huggingface/transformers';
 
-const MODEL_ID = 'onnx-community/SmolLM2-360M-Instruct-ONNX';
+env.useBrowserCache = true;
+env.allowLocalModels = false;
+
+const MODEL_ID = 'onnx-community/Qwen2.5-0.5B-Instruct';
 
 export type AiStatus = 'idle' | 'loading' | 'ready' | 'error';
 
@@ -38,7 +41,7 @@ export async function loadModel(): Promise<void> {
   try {
     generator = await pipeline('text-generation' as PipelineType, MODEL_ID, {
       device: 'webgpu',
-      dtype: 'q4f16',
+      
       progress_callback: (p: any) => {
         if (p.status === 'progress' && typeof p.progress === 'number') {
           const percent = Math.min(100, Math.round(p.progress));
