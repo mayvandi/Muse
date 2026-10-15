@@ -1,5 +1,5 @@
 function parseCookies(req) {
-  if (req.cookies) return req.cookies;
+  if (req.cookies && req.cookies.oauth_state) return req.cookies;
   const list = {};
   const cookieHeader = req.headers?.cookie;
   if (!cookieHeader) return list;
