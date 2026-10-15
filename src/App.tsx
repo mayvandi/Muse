@@ -1,45 +1,37 @@
 import { useEffect, useState } from 'react';
-import { NavLink, Navigate, Route, Routes } from 'react-router-dom';
-import NotesPage from './pages/NotesPage';
-import AskPage from './pages/AskPage';
+
+const GITHUB_CLIENT_ID = "Ov23liMpiKZXXFmkCncl";
 
 export default function App() {
   const [dark, setDark] = useState(() => localStorage.getItem('aubin-theme') === 'dark');
+
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark);
     localStorage.setItem('aubin-theme', dark ? 'dark' : 'light');
   }, [dark]);
 
-  const tab = ({ isActive }: { isActive: boolean }) =>
-    `flex-1 min-h-[44px] flex items-center justify-center ${isActive ? 'text-accent font-medium' : 'text-muted'}`;
+  const handleSignIn = () => {
+    window.location.href = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&scope=repo,user`;
+  };
 
   return (
-    <div className="min-h-screen" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-      <header className="flex items-center justify-between px-4 h-12 max-w-[720px] mx-auto">
-        <h1 className="text-xl font-serif text-accent">Aubin</h1>
-        <button
-          className="min-h-[44px] min-w-[44px] text-muted"
-          onClick={() => setDark(!dark)}
-          aria-label="Toggle dark mode"
-        >
-          {dark ? 'Light' : 'Dark'}
-        </button>
-      </header>
-      <main className="max-w-[720px] mx-auto px-4 pb-28">
-        <Routes>
-          <Route path="/" element={<Navigate to="/notes" replace />} />
-          <Route path="/notes" element={<NotesPage />} />
-          <Route path="/ask" element={<AskPage />} />
-          <Route path="*" element={<Navigate to="/notes" replace />} />
-        </Routes>
-      </main>
-      <nav
-        className="fixed bottom-0 inset-x-0 flex bg-surface border-t border-line"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+    <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+      <button
+        className="absolute top-4 right-4 min-h-[44px] min-w-[44px] text-muted text-sm"
+        onClick={() => setDark(!dark)}
+        aria-label="Toggle dark mode"
       >
-        <NavLink to="/notes" className={tab}>Notes</NavLink>
-        <NavLink to="/ask" className={tab}>Ask Muse</NavLink>
-      </nav>
+        {dark ? 'Light' : 'Dark'}
+      </button>
+      <div className="text-center space-y-6 max-w-sm w-full">
+        <h1 className="text-4xl font-serif text-accent font-semibold">Aubin</h1>
+        <button
+          onClick={handleSignIn}
+          className="w-full min-h-[44px] px-6 py-3 rounded-lg bg-accent text-white font-medium hover:opacity-90 transition-opacity focus:outline-none"
+        >
+          Sign in with GitHub
+        </button>
+      </div>
     </div>
   );
 }
