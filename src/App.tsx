@@ -7,30 +7,12 @@ interface User {
   needsReauth?: boolean;
 }
 
-const PROVIDER_MODELS: Record<string, { label: string; value: string }[]> = {
-  groq: [
-    { label: 'Llama 3.3 70B', value: 'llama-3.3-70b-versatile' },
-    { label: 'Llama 3.1 8B', value: 'llama-3.1-8b-instant' },
-    { label: 'Mixtral 8x7B', value: 'mixtral-8x7b-32768' },
-  ],
-  deepseek: [
-    { label: 'DeepSeek V3', value: 'deepseek-chat' },
-    { label: 'DeepSeek R1', value: 'deepseek-reasoner' },
-  ],
-  openrouter: [
-    { label: 'Auto (Best for task)', value: 'auto' },
-    { label: 'Claude 3.5 Sonnet', value: 'anthropic/claude-3.5-sonnet' },
-    { label: 'DeepSeek R1', value: 'deepseek/deepseek-r1' },
-  ],
-  anthropic: [
-    { label: 'Claude 3.5 Sonnet', value: 'claude-3-5-sonnet-20241022' },
-    { label: 'Claude 3.5 Haiku', value: 'claude-3-5-haiku-20241022' },
-  ],
-  openai: [
-    { label: 'GPT-4o', value: 'gpt-4o' },
-    { label: 'GPT-4o Mini', value: 'gpt-4o-mini' },
-    { label: 'o3-mini', value: 'o3-mini' },
-  ],
+const PROVIDER_ENDPOINTS: Record<string, string> = {
+  groq: 'https://api.groq.com/openai/v1/models',
+  openrouter: 'https://openrouter.ai/api/v1/models',
+  deepseek: 'https://api.deepseek.com/models',
+  anthropic: 'https://api.anthropic.com/v1/models',
+  openai: 'https://api.openai.com/v1/models',
 };
 
 export default function App() {
@@ -47,9 +29,14 @@ export default function App() {
   // Settings state
   const [selectedRepo, setSelectedRepo] = useState(() => localStorage.getItem('aubin-repo') || 'All Repositories');
   const [provider, setProvider] = useState(() => localStorage.getItem('aubin-provider') || 'groq');
-  const [model, setModel] = useState(() => localStorage.getItem('aubin-model') || 'llama-3.3-70b-versatile');
+  const [model, setModel] = useState(() => localStorage.getItem('aubin-model') || '');
   const [apiKey, setApiKey] = useState(() => localStorage.getItem('aubin-api-key') || '');
   const [language, setLanguage] = useState(() => localStorage.getItem('aubin-language') || 'en');
+
+  // Dynamic models state
+  const [modelsList, setModelsList] = useState<string[]>([]);
+  const [modelError, setModelError] = useState<string | null>(null);
+  const [fetchingModels, setFetchingModels] = useState(false);
 
   useEffect(() => {
     let isDark = false;
@@ -68,13 +55,7 @@ export default function App() {
 
   useEffect(() => {
     localStorage.setItem('aubin-provider', provider);
-    const availableModels = PROVIDER_MODELS[provider];
-    if (availableModels && !availableModels.some(m => m.value === model)) {
-      const defaultModel = availableModels[0]?.value || '';
-      setModel(defaultModel);
-      localStorage.setItem('aubin-model', defaultModel);
-    }
-  }, [provider, model]);
+  }, [provider]);
 
   useEffect(() => {
     localStorage.setItem('aubin-model', model);
@@ -87,6 +68,94 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('aubin-language', language);
   }, [language]);
+
+  // Fetch / load models dynamically per provider
+  useEffect(() => {
+    setModelError(null);
+
+    // 1. Check localStorage cache for this provider
+    const cached = localStorage.getItem(`aubin-models-${provider}`);
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setModelsList(parsed);
+          if (!model || !parsed.includes(model)) {
+            setModel(parsed[0]);
+          }
+          return;
+        }
+      } catch {
+        // invalid cache, ignore
+      }
+    }
+
+    if (!apiKey.trim()) {
+      setModelsList([]);
+      return;
+    }
+
+    const endpoint = PROVIDER_ENDPOINTS[provider];
+    if (!endpoint) {
+      setModelsList([]);
+      return;
+    }
+
+    let isMounted = true;
+    setFetchingModels(true);
+
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${apiKey.trim()}`,
+      'Content-Type': 'application/json',
+    };
+
+    if (provider === 'anthropic') {
+      headers['x-api-key'] = apiKey.trim();
+      headers['anthropic-version'] = '2023-06-01';
+    }
+
+    fetch(endpoint, { method: 'GET', headers })
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then(data => {
+        if (!isMounted) return;
+        let ids: string[] = [];
+        if (Array.isArray(data.data)) {
+          ids = data.data.map((m: { id?: string; name?: string }) => m.id || m.name || '').filter(Boolean);
+        } else if (Array.isArray(data.models)) {
+          ids = data.models.map((m: { id?: string; name?: string }) => m.id || m.name || '').filter(Boolean);
+        } else if (Array.isArray(data)) {
+          ids = data.map((m: { id?: string; name?: string }) => m.id || m.name || '').filter(Boolean);
+        }
+
+        if (ids.length === 0) {
+          throw new Error('No models found');
+        }
+
+        // Deduplicate and sort
+        ids = Array.from(new Set(ids)).sort();
+
+        setModelsList(ids);
+        localStorage.setItem(`aubin-models-${provider}`, JSON.stringify(ids));
+
+        if (!model || !ids.includes(model)) {
+          setModel(ids[0]);
+        }
+      })
+      .catch(() => {
+        if (!isMounted) return;
+        setModelError("Couldn't load models");
+      })
+      .finally(() => {
+        if (isMounted) setFetchingModels(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [provider, apiKey]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -231,24 +300,38 @@ export default function App() {
                 </select>
               </div>
               <div className="border-t border-muted/20" />
-              <div className="flex items-center justify-between px-4 py-3.5">
-                <div className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                  <span className="text-foreground text-sm font-medium">Model</span>
+              <div className="flex flex-col px-4 py-3.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <svg className="w-5 h-5 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    <span className="text-foreground text-sm font-medium">Model</span>
+                  </div>
+                  <select
+                    value={model}
+                    onChange={e => setModel(e.target.value)}
+                    disabled={!apiKey.trim() || fetchingModels || modelsList.length === 0}
+                    className="bg-transparent text-muted text-sm focus:outline-none cursor-pointer text-right max-w-[200px] truncate disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {!apiKey.trim() ? (
+                      <option value="" className="bg-background text-foreground">Add API key first</option>
+                    ) : fetchingModels ? (
+                      <option value="" className="bg-background text-foreground">Loading models...</option>
+                    ) : modelsList.length === 0 ? (
+                      <option value="" className="bg-background text-foreground">No models available</option>
+                    ) : (
+                      modelsList.map(m => (
+                        <option key={m} value={m} className="bg-background text-foreground">
+                          {m}
+                        </option>
+                      ))
+                    )}
+                  </select>
                 </div>
-                <select
-                  value={model}
-                  onChange={e => setModel(e.target.value)}
-                  className="bg-transparent text-muted text-sm focus:outline-none cursor-pointer text-right max-w-[180px] truncate"
-                >
-                  {(PROVIDER_MODELS[provider] || []).map(m => (
-                    <option key={m.value} value={m.value} className="bg-background text-foreground">
-                      {m.label}
-                    </option>
-                  ))}
-                </select>
+                {modelError && (
+                  <p className="text-red-500 text-xs mt-1 text-right">{modelError}</p>
+                )}
               </div>
               <div className="border-t border-muted/20" />
               <div className="flex items-center justify-between px-4 py-3.5">
