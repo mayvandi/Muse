@@ -14,6 +14,7 @@ export default function App() {
   const [input, setInput] = useState('');
   const [notice, setNotice] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark);
@@ -50,6 +51,126 @@ export default function App() {
     setTimeout(() => setNotice(null), 3000);
   };
 
+  if (settingsOpen) {
+    return (
+      <div
+        className="min-h-screen flex flex-col"
+        style={{
+          paddingTop: 'env(safe-area-inset-top)',
+          paddingBottom: 'env(safe-area-inset-bottom)'
+        }}
+      >
+        <header className="flex items-center px-4 py-3">
+          <button
+            onClick={() => setSettingsOpen(false)}
+            className="min-h-[44px] min-w-[44px] flex items-center text-muted text-xl"
+            aria-label="Tutup"
+          >
+            ✕
+          </button>
+          <h2 className="flex-1 text-center font-serif text-accent font-semibold">
+            Pengaturan
+          </h2>
+          <button
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center text-muted text-sm"
+            aria-label="Info"
+          >
+            ⓘ
+          </button>
+        </header>
+
+        <main className="flex-1 overflow-y-auto px-4 pb-8 max-w-2xl mx-auto w-full">
+          {user && (
+            <section className="mb-6">
+              <div className="flex items-center gap-3 py-3 px-3 rounded-2xl bg-muted/5">
+                <img
+                  src={user.avatar_url}
+                  alt={user.login}
+                  className="w-10 h-10 rounded-full"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="text-accent font-medium truncate">
+                    {user.name || user.login}
+                  </p>
+                  <p className="text-muted text-xs truncate">
+                    @{user.login} · Free
+                  </p>
+                </div>
+              </div>
+            </section>
+          )}
+
+          <section className="mb-6">
+            <h3 className="text-muted text-xs mb-2 px-1">Akun</h3>
+            <div className="rounded-2xl border border-muted/20 overflow-hidden">
+              <button className="w-full flex items-center justify-between px-4 py-4 hover:bg-muted/5 text-left">
+                <span className="text-accent">Repo</span>
+                <span className="text-muted">›</span>
+              </button>
+              <div className="border-t border-muted/20" />
+              <button className="w-full flex items-center justify-between px-4 py-4 hover:bg-muted/5 text-left">
+                <span className="text-accent">Profil</span>
+                <span className="text-muted">›</span>
+              </button>
+              <div className="border-t border-muted/20" />
+              <button className="w-full flex items-center justify-between px-4 py-4 hover:bg-muted/5 text-left">
+                <span className="text-accent">Notifikasi</span>
+                <span className="text-muted">›</span>
+              </button>
+              <div className="border-t border-muted/20" />
+              <button className="w-full flex items-center justify-between px-4 py-4 hover:bg-muted/5 text-left">
+                <span className="text-accent">Privasi</span>
+                <span className="text-muted">›</span>
+              </button>
+              <div className="border-t border-muted/20" />
+              <button className="w-full flex items-center justify-between px-4 py-4 hover:bg-muted/5 text-left">
+                <span className="text-accent">Tautan yang dibagikan</span>
+                <span className="text-muted">›</span>
+              </button>
+            </div>
+          </section>
+
+          <section className="mb-8">
+            <h3 className="text-muted text-xs mb-2 px-1">Aplikasi</h3>
+            <div className="rounded-2xl border border-muted/20 overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-4">
+                <span className="text-accent">Tema</span>
+                <div className="flex gap-1 bg-muted/10 rounded-lg p-1">
+                  <button
+                    onClick={() => setDark(false)}
+                    className={`px-3 py-1 rounded text-xs transition-colors ${
+                      !dark ? 'bg-accent text-white' : 'text-muted'
+                    }`}
+                  >
+                    Terang
+                  </button>
+                  <button
+                    onClick={() => setDark(true)}
+                    className={`px-3 py-1 rounded text-xs transition-colors ${
+                      dark ? 'bg-accent text-white' : 'text-muted'
+                    }`}
+                  >
+                    Gelap
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {user && (
+            <a
+              href="/api/auth/logout"
+              className="flex items-center gap-2 px-3 py-4 text-red-500 hover:opacity-80 transition-opacity"
+            >
+              <span>←</span>
+              <span>Keluar</span>
+            </a>
+          )}
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div
       className="min-h-screen flex flex-col"
@@ -60,12 +181,17 @@ export default function App() {
     >
       <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10">
         {user ? (
-          <a
-            href="/api/auth/logout"
-            className="min-h-[44px] min-w-[44px] flex items-center text-muted text-xs"
+          <button
+            onClick={() => setSettingsOpen(true)}
+            className="min-h-[44px] min-w-[44px] flex items-center gap-2 text-muted text-xs"
           >
-            Sign out
-          </a>
+            <img
+              src={user.avatar_url}
+              alt={user.login}
+              className="w-6 h-6 rounded-full"
+            />
+            <span>{user.name || user.login}</span>
+          </button>
         ) : (
           <div />
         )}
