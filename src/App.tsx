@@ -349,36 +349,35 @@ export default function App() {
 
   return (
     <div
-      className="min-h-screen flex flex-col"
+      className="min-h-screen flex flex-col relative"
       style={{
         paddingTop: 'env(safe-area-inset-top)',
         paddingBottom: 'env(safe-area-inset-bottom)'
       }}
     >
-      <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10">
-        {user ? (
+      {user && (
+        <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
           <button
             onClick={() => setSettingsOpen(true)}
-            className="min-h-[44px] min-w-[44px] flex items-center gap-2 text-muted text-xs"
+            aria-label="Open Settings"
+            className="w-11 h-11 rounded-full bg-muted/20 hover:bg-muted/30 flex items-center justify-center transition-colors text-foreground"
           >
-            <img
-              src={user.avatar_url}
-              alt={user.login}
-              className="w-6 h-6 rounded-full"
-            />
-            <span>{user.name || user.login}</span>
+            <svg className="w-5 h-5 text-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h12M4 18h8" />
+            </svg>
           </button>
-        ) : (
-          <div />
-        )}
-        <button
-          className="min-h-[44px] min-w-[44px] text-muted text-sm"
-          onClick={() => setThemeMode(themeMode === 'dark' ? 'light' : 'dark')}
-          aria-label="Toggle dark mode"
-        >
-          {themeMode === 'dark' ? 'Light' : 'Dark'}
-        </button>
-      </div>
+          <button
+            aria-label="Ghost placeholder"
+            className="w-11 h-11 rounded-full bg-muted/20 hover:bg-muted/30 flex items-center justify-center transition-colors text-foreground"
+          >
+            <svg className="w-6 h-6 text-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12a7.5 7.5 0 0 1 15 0v6.75a.75.75 0 0 1-1.28.53 1.5 1.5 0 0 0-2.12 0 .75.75 0 0 1-1.28-.53V18a1.5 1.5 0 0 0-3 0v.75a.75.75 0 0 1-1.28.53 1.5 1.5 0 0 0-2.12 0 .75.75 0 0 1-1.28-.53V18a1.5 1.5 0 0 0-2.12 0A.75.75 0 0 1 4.5 18.75V12z" />
+              <circle cx="9" cy="11" r="1" fill="currentColor" />
+              <circle cx="15" cy="11" r="1" fill="currentColor" />
+            </svg>
+          </button>
+        </div>
+      )}
 
       <main className="flex-1 flex flex-col items-center justify-center px-4">
         {loading ? (

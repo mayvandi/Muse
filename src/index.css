@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root { --bg:#FAF9F5; --surface:#FFFFFF; --ink:#1F1E1D; --muted:#6B6862; --line:#E8E4DD; --accent:#C96442; }
-.dark { --bg:#1A1917; --surface:#232220; --ink:#F0EDE6; --muted:#A8A399; --line:#34322E; --accent:#E07A5F; }
+.dark { --bg:#121110; --surface:#1C1B19; --ink:#F0EDE6; --muted:#A8A399; --line:#2A2926; --accent:#E07A5F; }
 
 body { background: var(--bg); color: var(--ink); font-family: Inter, system-ui, sans-serif; }
 h1, h2, h3 { font-family: Lora, serif; }
