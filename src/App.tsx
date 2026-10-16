@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface User {
   login: string;
@@ -654,7 +656,55 @@ export default function App() {
                       : 'bg-muted/10 text-foreground'
                   }`}
                 >
-                  {m.content}
+                  {m.role === 'user' ? (
+                    m.content
+                  ) : (
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        p: ({ children }) => <p className="my-2 first:mt-0 last:mb-0">{children}</p>,
+                        h1: ({ children }) => <h1 className="text-xl font-bold font-serif my-3 text-foreground">{children}</h1>,
+                        h2: ({ children }) => <h2 className="text-lg font-bold font-serif my-2.5 text-foreground">{children}</h2>,
+                        h3: ({ children }) => <h3 className="text-base font-bold font-serif my-2 text-foreground">{children}</h3>,
+                        ul: ({ children }) => <ul className="list-disc pl-5 my-2 space-y-1">{children}</ul>,
+                        ol: ({ children }) => <ol className="list-decimal pl-5 my-2 space-y-1">{children}</ol>,
+                        a: ({ href, children }) => (
+                          <a href={href} target="_blank" rel="noopener noreferrer" className="text-accent underline font-medium hover:opacity-80">
+                            {children}
+                          </a>
+                        ),
+                        code: ({ node, className, children, ...props }: any) => {
+                          const match = /language-(\w+)/.exec(className || '');
+                          const isInline = !match && !String(children).includes('\n');
+                          return isInline ? (
+                            <code className="bg-muted/10 px-1.5 py-0.5 rounded text-sm font-mono text-accent" {...props}>
+                              {children}
+                            </code>
+                          ) : (
+                            <code className="block bg-muted/10 rounded-lg p-3 font-mono text-sm overflow-x-auto my-2" {...props}>
+                              {children}
+                            </code>
+                          );
+                        },
+                        pre: ({ children }) => <div className="my-2">{children}</div>,
+                        table: ({ children }) => (
+                          <div className="overflow-x-auto my-3">
+                            <table className="w-full text-left border-collapse border border-muted/20 text-sm">
+                              {children}
+                            </table>
+                          </div>
+                        ),
+                        th: ({ children }) => (
+                          <th className="border border-muted/20 p-2 font-semibold bg-muted/10">{children}</th>
+                        ),
+                        td: ({ children }) => (
+                          <td className="border border-muted/20 p-2">{children}</td>
+                        ),
+                      }}
+                    >
+                      {m.content}
+                    </ReactMarkdown>
+                  )}
                 </div>
               </div>
             ))}
