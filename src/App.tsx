@@ -15,6 +15,15 @@ const PROVIDER_ENDPOINTS: Record<string, string> = {
   openai: 'https://api.openai.com/v1/models',
 };
 
+const EXCLUDED_MODEL_KEYWORDS = [
+  'whisper',
+  'orpheus',
+  'tts',
+  'audio',
+  'prompt-guard',
+  'safeguard',
+];
+
 export default function App() {
   const [themeMode, setThemeMode] = useState<'light' | 'dark' | 'system'>(() => {
     return (localStorage.getItem('aubin-theme') as 'light' | 'dark' | 'system') || 'dark';
@@ -73,15 +82,22 @@ export default function App() {
   useEffect(() => {
     setModelError(null);
 
+    // Filter helper function
+    const isChatModel = (id: string) => {
+      const lower = id.toLowerCase();
+      return !EXCLUDED_MODEL_KEYWORDS.some(keyword => lower.includes(keyword));
+    };
+
     // 1. Check localStorage cache for this provider
     const cached = localStorage.getItem(`aubin-models-${provider}`);
     if (cached) {
       try {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          setModelsList(parsed);
-          if (!model || !parsed.includes(model)) {
-            setModel(parsed[0]);
+          const filtered = parsed.filter(isChatModel);
+          setModelsList(filtered);
+          if (!model || !filtered.includes(model)) {
+            setModel(filtered[0] || '');
           }
           return;
         }
@@ -129,6 +145,9 @@ export default function App() {
         } else if (Array.isArray(data)) {
           ids = data.map((m: { id?: string; name?: string }) => m.id || m.name || '').filter(Boolean);
         }
+
+        // Apply keyword exclusions for chat/completion LLMs
+        ids = ids.filter(isChatModel);
 
         if (ids.length === 0) {
           throw new Error('No models found');
@@ -215,7 +234,10 @@ export default function App() {
           </button>
         </header>
 
-        <main className="flex-1 overflow-y-auto px-4 pb-8 max-w-2xl mx-auto w-full font-sans">
+        <main
+          className="flex-1 overflow-y-auto px-4 max-w-2xl mx-auto w-full font-sans"
+          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 120px)' }}
+        >
           {user && (
             <section className="mb-6">
               <div className="flex items-center gap-3 py-3 px-3 rounded-2xl bg-muted/5">
