@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface User {
   login: string;
@@ -35,6 +35,16 @@ export default function App() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
+  // Attachment state
+  const [attachedImage, setAttachedImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Mic active state
+  const [isMicActive, setIsMicActive] = useState(false);
+
+  // Model selection popup state
+  const [showModelPicker, setShowModelPicker] = useState(false);
+
   // Settings state
   const [selectedRepo, setSelectedRepo] = useState(() => localStorage.getItem('aubin-repo') || 'All Repositories');
   const [provider, setProvider] = useState(() => localStorage.getItem('aubin-provider') || 'groq');
@@ -46,6 +56,8 @@ export default function App() {
   const [modelsList, setModelsList] = useState<string[]>([]);
   const [modelError, setModelError] = useState<string | null>(null);
   const [fetchingModels, setFetchingModels] = useState(false);
+
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     let isDark = false;
@@ -78,17 +90,24 @@ export default function App() {
     localStorage.setItem('aubin-language', language);
   }, [language]);
 
+  // Adjust textarea height up to 5 lines (~120px)
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      const scrollHeight = textareaRef.current.scrollHeight;
+      textareaRef.current.style.height = `${Math.min(scrollHeight, 120)}px`;
+    }
+  }, [input]);
+
   // Fetch / load models dynamically per provider
   useEffect(() => {
     setModelError(null);
 
-    // Filter helper function
     const isChatModel = (id: string) => {
       const lower = id.toLowerCase();
       return !EXCLUDED_MODEL_KEYWORDS.some(keyword => lower.includes(keyword));
     };
 
-    // 1. Check localStorage cache for this provider
     const cached = localStorage.getItem(`aubin-models-${provider}`);
     if (cached) {
       try {
@@ -102,7 +121,7 @@ export default function App() {
           return;
         }
       } catch {
-        // invalid cache, ignore
+        // ignore cache error
       }
     }
 
@@ -146,14 +165,12 @@ export default function App() {
           ids = data.map((m: { id?: string; name?: string }) => m.id || m.name || '').filter(Boolean);
         }
 
-        // Apply keyword exclusions for chat/completion LLMs
         ids = ids.filter(isChatModel);
 
         if (ids.length === 0) {
           throw new Error('No models found');
         }
 
-        // Deduplicate and sort
         ids = Array.from(new Set(ids)).sort();
 
         setModelsList(ids);
@@ -198,13 +215,37 @@ export default function App() {
       });
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim()) return;
-    setNotice('Agent is initialized and ready.');
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setAttachedImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSendMessage = () => {
+    if (!input.trim() && !attachedImage) return;
+    setNotice('Chat is coming soon.');
     setInput('');
+    setAttachedImage(null);
+    if (textareaRef.current) textareaRef.current.style.height = 'auto';
     setTimeout(() => setNotice(null), 3000);
   };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  // Display friendly model name
+  const displayModelName = model
+    ? model.split('/').pop()?.replace(/^(llama-3\.\d-|claude-3-5-|gpt-4o-)/i, '') || model
+    : 'Select model';
 
   if (settingsOpen) {
     return (
@@ -454,18 +495,18 @@ export default function App() {
 
   return (
     <div
-      className="min-h-screen flex flex-col relative"
+      className="min-h-screen flex flex-col justify-between relative overflow-hidden"
       style={{
         paddingTop: 'env(safe-area-inset-top)',
-        paddingBottom: 'env(safe-area-inset-bottom)'
       }}
     >
+      {/* Top Header */}
       {user && (
         <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
           <button
             onClick={() => setSettingsOpen(true)}
             aria-label="Open Settings"
-            className="w-11 h-11 rounded-full bg-muted/20 hover:bg-muted/30 flex items-center justify-center transition-colors text-foreground"
+            className="w-11 h-11 rounded-full bg-muted/15 hover:bg-muted/25 backdrop-blur-md flex items-center justify-center transition-colors text-foreground"
           >
             <svg className="w-5 h-5 text-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h12M4 18h8" />
@@ -473,7 +514,7 @@ export default function App() {
           </button>
           <button
             aria-label="Ghost placeholder"
-            className="w-11 h-11 rounded-full bg-muted/20 hover:bg-muted/30 flex items-center justify-center transition-colors text-foreground"
+            className="w-11 h-11 rounded-full bg-muted/15 hover:bg-muted/25 backdrop-blur-md flex items-center justify-center transition-colors text-foreground"
           >
             <svg className="w-6 h-6 text-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12a7.5 7.5 0 0 1 15 0v6.75a.75.75 0 0 1-1.28.53 1.5 1.5 0 0 0-2.12 0 .75.75 0 0 1-1.28-.53V18a1.5 1.5 0 0 0-3 0v.75a.75.75 0 0 1-1.28.53 1.5 1.5 0 0 0-2.12 0 .75.75 0 0 1-1.28-.53V18a1.5 1.5 0 0 0-2.12 0A.75.75 0 0 1 4.5 18.75V12z" />
@@ -484,7 +525,8 @@ export default function App() {
         </div>
       )}
 
-      <main className="flex-1 flex flex-col items-center justify-center px-4">
+      {/* Main Content Area */}
+      <main className="flex-1 flex flex-col items-center justify-center px-4 pt-16 pb-36">
         {loading ? (
           <p className="text-muted text-sm">Loading...</p>
         ) : !user ? (
@@ -493,7 +535,7 @@ export default function App() {
             {authError && <p className="text-muted text-sm">{authError}</p>}
             <a
               href="/api/auth/login"
-              className="inline-block w-full min-h-[44px] px-6 py-3 rounded-lg bg-accent text-white font-medium hover:opacity-90 transition-opacity text-center"
+              className="inline-block w-full min-h-[44px] px-6 py-3 rounded-xl bg-accent text-white font-medium hover:opacity-90 transition-opacity text-center shadow-md"
             >
               Sign in with GitHub
             </a>
@@ -508,40 +550,152 @@ export default function App() {
             </p>
             <a
               href="/api/auth/logout"
-              className="inline-block min-h-[44px] px-6 py-3 rounded-lg bg-accent text-white font-medium hover:opacity-90 transition-opacity text-center"
+              className="inline-block min-h-[44px] px-6 py-3 rounded-xl bg-accent text-white font-medium hover:opacity-90 transition-opacity text-center shadow-md"
             >
               Reconnect GitHub
             </a>
           </div>
         ) : (
-          <div className="w-full max-w-xl flex flex-col items-center space-y-8">
-            <h1 className="text-3xl font-serif text-accent font-semibold text-center">
+          <div className="w-full max-w-xl flex flex-col items-center text-center space-y-3">
+            <h1 className="text-3xl md:text-4xl font-serif text-accent font-semibold tracking-tight">
               Welcome back, {user.name || user.login}
             </h1>
-
-            <form onSubmit={handleSubmit} className="w-full">
-              <div className="relative">
-                <input
-                  type="text"
-                  value={input}
-                  onChange={e => setInput(e.target.value)}
-                  placeholder="Ask Aubin anything..."
-                  className="w-full min-h-[56px] pl-5 pr-14 rounded-2xl border border-muted/30 bg-transparent placeholder:text-muted/60 focus:outline-none focus:border-accent/60 transition-colors"
-                />
-                <button
-                  type="submit"
-                  aria-label="Send"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 min-h-[40px] min-w-[40px] rounded-xl bg-accent text-white flex items-center justify-center hover:opacity-90 transition-opacity"
-                >
-                  →
-                </button>
-              </div>
-            </form>
-
-            {notice && <p className="text-muted text-sm">{notice}</p>}
+            {notice && (
+              <p className="text-sm font-medium text-foreground/80 bg-muted/10 px-3 py-1.5 rounded-full backdrop-blur-sm animate-fade-in">
+                {notice}
+              </p>
+            )}
           </div>
         )}
       </main>
+
+      {/* Liquid Glass Bottom Input Area for Signed-In Users */}
+      {user && !user.needsReauth && (
+        <div
+          className="fixed bottom-0 left-0 right-0 p-4 z-20 flex flex-col items-center pointer-events-none"
+          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)' }}
+        >
+          <div className="w-full max-w-xl pointer-events-auto relative flex flex-col gap-2">
+
+            {/* Image Attachment Thumbnail Preview */}
+            {attachedImage && (
+              <div className="self-start relative group rounded-2xl overflow-hidden border border-white/20 shadow-lg mb-1">
+                <img src={attachedImage} alt="Attachment preview" className="w-20 h-20 object-cover" />
+                <button
+                  type="button"
+                  onClick={() => setAttachedImage(null)}
+                  className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center text-xs backdrop-blur-sm"
+                  aria-label="Remove attached image"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
+            {/* Model Selector Dropdown Popover */}
+            {showModelPicker && (
+              <div className="liquid-glass rounded-2xl p-2 mb-1 max-h-48 overflow-y-auto shadow-2xl z-30">
+                {modelsList.length === 0 ? (
+                  <p className="text-xs text-muted p-2 text-center">No models loaded. Set API key in Settings.</p>
+                ) : (
+                  modelsList.map(m => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => {
+                        setModel(m);
+                        setShowModelPicker(false);
+                      }}
+                      className={`w-full text-left px-3 py-2 text-xs rounded-xl font-medium truncate flex items-center justify-between ${
+                        m === model ? 'bg-accent/15 text-accent font-semibold' : 'text-foreground hover:bg-muted/10'
+                      }`}
+                    >
+                      <span className="truncate">{m}</span>
+                      {m === model && <span>✓</span>}
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
+
+            {/* Liquid Glass Container Card */}
+            <div className="liquid-glass rounded-[28px] p-3 flex flex-col gap-2">
+              {/* Row 1: Top Textarea Input */}
+              <div className="px-1 pt-1">
+                <textarea
+                  ref={textareaRef}
+                  value={input}
+                  onChange={e => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Chat with Aubin"
+                  rows={1}
+                  className="w-full bg-transparent border-0 resize-none text-foreground placeholder:text-muted/60 focus:outline-none text-base font-normal leading-snug max-h-32"
+                />
+              </div>
+
+              {/* Row 2: Bottom Control Toolbar */}
+              <div className="flex items-center justify-between pt-1">
+                {/* Left Controls: Attachment + Model Pill */}
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageSelect}
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    aria-label="Attach image"
+                    className="w-10 h-10 rounded-full glass-pill flex items-center justify-center text-foreground font-light text-xl hover:opacity-80 transition-all"
+                  >
+                    +
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowModelPicker(!showModelPicker)}
+                    className="h-10 px-3.5 rounded-full glass-pill flex items-center gap-1.5 text-xs font-medium text-foreground hover:opacity-80 transition-all truncate max-w-[180px]"
+                  >
+                    <span className="truncate">{displayModelName}</span>
+                    <span className="text-[10px] opacity-60">▼</span>
+                  </button>
+                </div>
+
+                {/* Right Controls: Mic + Send Button */}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsMicActive(!isMicActive)}
+                    aria-label="Toggle microphone"
+                    className={`w-10 h-10 rounded-full glass-pill flex items-center justify-center transition-all ${
+                      isMicActive ? 'text-accent bg-accent/20' : 'text-foreground'
+                    }`}
+                  >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8" />
+                    </svg>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleSendMessage}
+                    aria-label="Send message"
+                    className="w-10 h-10 rounded-full bg-black dark:bg-white text-white dark:text-black flex items-center justify-center font-bold hover:opacity-90 active:scale-95 transition-all shadow-md"
+                  >
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 3v10.5m0-10.5L7.5 7.5M12 3l4.5 4.5M6 18h12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 }

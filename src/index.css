@@ -2,10 +2,70 @@
 @tailwind components;
 @tailwind utilities;
 
-:root { --bg:#FAF9F5; --surface:#FFFFFF; --ink:#1F1E1D; --muted:#6B6862; --line:#E8E4DD; --accent:#C96442; }
-.dark { --bg:#121110; --surface:#1C1B19; --ink:#F0EDE6; --muted:#A8A399; --line:#2A2926; --accent:#E07A5F; }
+:root {
+  --bg: #FAF9F5;
+  --surface: #FFFFFF;
+  --ink: #1F1E1D;
+  --muted: #6B6862;
+  --line: #E8E4DD;
+  --accent: #C96442;
 
-body { background: var(--bg); color: var(--ink); font-family: Inter, system-ui, sans-serif; }
-h1, h2, h3 { font-family: Lora, serif; }
-input, textarea, button { font-size: 16px; } /* prevents iOS zoom */
-textarea:focus, input:focus { outline: 1px solid var(--accent); }
+  --glass-bg: rgba(255, 255, 255, 0.75);
+  --glass-border: rgba(255, 255, 255, 0.6);
+  --glass-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.04);
+  --glass-inner-glow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.8);
+  --pill-bg: rgba(0, 0, 0, 0.05);
+  --pill-hover: rgba(0, 0, 0, 0.08);
+}
+
+.dark {
+  --bg: #121110;
+  --surface: #1C1B19;
+  --ink: #F0EDE6;
+  --muted: #A8A399;
+  --line: #2A2926;
+  --accent: #E07A5F;
+
+  --glass-bg: rgba(30, 30, 35, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-shadow: 0 12px 36px -4px rgba(0, 0, 0, 0.4), 0 4px 16px -2px rgba(0, 0, 0, 0.3);
+  --glass-inner-glow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.15);
+  --pill-bg: rgba(255, 255, 255, 0.08);
+  --pill-hover: rgba(255, 255, 255, 0.14);
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: Inter, system-ui, sans-serif;
+}
+
+h1, h2, h3 {
+  font-family: Lora, serif;
+}
+
+input, textarea, button {
+  font-size: 16px; /* prevents iOS zoom */
+}
+
+textarea:focus, input:focus {
+  outline: none;
+}
+
+/* Liquid Glass container */
+.liquid-glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow), var(--glass-inner-glow);
+}
+
+.glass-pill {
+  background: var(--pill-bg);
+  transition: background 0.2s ease;
+}
+
+.glass-pill:hover, .glass-pill:active {
+  background: var(--pill-hover);
+}
