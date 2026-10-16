@@ -18,24 +18,24 @@ export default async function handler(req, res) {
     const { code, error, state } = query;
 
     if (error === 'access_denied') {
-      res.statusCode = 200;
-      res.setHeader('Content-Type', 'text/html');
-      return res.end("<h1>Sign-in cancelled</h1><a href='/'>Go back</a>");
+      res.statusCode = 302;
+      res.setHeader('Location', '/?error=cancelled');
+      return res.end();
     }
 
     if (!code) {
-      res.statusCode = 400;
-      res.setHeader('Content-Type', 'application/json');
-      return res.end(JSON.stringify({ error: 'Missing code' }));
+      res.statusCode = 302;
+      res.setHeader('Location', '/?error=missing_code');
+      return res.end();
     }
 
     const cookies = parseCookies(req);
     const oauthState = cookies.oauth_state;
 
     if (!oauthState || state !== oauthState) {
-      res.statusCode = 400;
-      res.setHeader('Content-Type', 'application/json');
-      return res.end(JSON.stringify({ error: 'State mismatch' }));
+      res.statusCode = 302;
+      res.setHeader('Location', '/?error=state_mismatch');
+      return res.end();
     }
 
     const clientId = process.env.GITHUB_CLIENT_ID;
@@ -67,9 +67,9 @@ export default async function handler(req, res) {
     const token = tokenData.access_token;
 
     if (!token) {
-      res.statusCode = 400;
-      res.setHeader('Content-Type', 'text/html');
-      return res.end("<h1>Sign-in failed</h1><a href='/'>Try again</a>");
+      res.statusCode = 302;
+      res.setHeader('Location', '/?error=auth_failed');
+      return res.end();
     }
 
     const userResponse = await fetch('https://api.github.com/user', {
@@ -86,9 +86,9 @@ export default async function handler(req, res) {
       `gh_token=${token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=3600`
     ]);
 
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'text/html');
-    return res.end(`<h1>Signed in as @${user.login}</h1><a href='/'>Continue to Aubin</a>`);
+    res.statusCode = 302;
+    res.setHeader('Location', '/');
+    return res.end();
   } catch (err) {
     res.statusCode = 500;
     res.setHeader('Content-Type', 'application/json');
