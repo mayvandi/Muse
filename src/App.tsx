@@ -7,6 +7,11 @@ interface User {
   needsReauth?: boolean;
 }
 
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 const PROVIDER_ENDPOINTS: Record<string, string> = {
   groq: 'https://api.groq.com/openai/v1/models',
   openrouter: 'https://openrouter.ai/api/v1/models',
@@ -34,6 +39,12 @@ export default function App() {
   const [notice, setNotice] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+
+  // Chat state
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [sending, setSending] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
+  const chatBottomRef = useRef<HTMLDivElement>(null);
 
   // Attachment state
   const [attachedImage, setAttachedImage] = useState<string | null>(null);
@@ -89,6 +100,35 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('aubin-language', language);
   }, [language]);
+
+  // Load chat messages on mount / user change
+  useEffect(() => {
+    if (user?.login) {
+      const saved = localStorage.getItem(`aubin-chat-${user.login}`);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            setMessages(parsed.slice(-100));
+          }
+        } catch {
+          // ignore error
+        }
+      }
+    }
+  }, [user?.login]);
+
+  // Save chat messages on change
+  useEffect(() => {
+    if (user?.login && messages.length > 0) {
+      localStorage.setItem(`aubin-chat-${user.login}`, JSON.stringify(messages.slice(-100)));
+    }
+  }, [messages, user?.login]);
+
+  // Scroll to bottom when messages or sending state change
+  useEffect(() => {
+    chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, sending, chatError]);
 
   // Adjust textarea height up to 5 lines (~120px)
   useEffect(() => {
@@ -226,13 +266,47 @@ export default function App() {
     }
   };
 
-  const handleSendMessage = () => {
-    if (!input.trim() && !attachedImage) return;
-    setNotice('Chat is coming soon.');
+  const handleSendMessage = async () => {
+    if (!input.trim() || sending) return;
+
+    const userMsgText = input.trim();
+    const updatedMessages: Message[] = [...messages, { role: 'user', content: userMsgText }];
+
+    setMessages(updatedMessages);
     setInput('');
     setAttachedImage(null);
     if (textareaRef.current) textareaRef.current.style.height = 'auto';
-    setTimeout(() => setNotice(null), 3000);
+    setSending(true);
+    setChatError(null);
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider,
+          model,
+          apiKey,
+          messages: updatedMessages,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data?.error || 'Failed to send message');
+      }
+
+      if (data.reply) {
+        setMessages([...updatedMessages, { role: 'assistant', content: data.reply }]);
+      }
+    } catch (err: any) {
+      const errMsg = err?.message || 'Something went wrong';
+      setChatError(errMsg);
+      setTimeout(() => setChatError(null), 5000);
+    } finally {
+      setSending(false);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -526,7 +600,7 @@ export default function App() {
       )}
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col items-center justify-center px-4 pt-16 pb-36">
+      <main className="flex-1 flex flex-col items-center justify-center px-4 pt-16 pb-44 overflow-y-auto">
         {loading ? (
           <p className="text-muted text-sm">Loading...</p>
         ) : !user ? (
@@ -555,7 +629,7 @@ export default function App() {
               Reconnect GitHub
             </a>
           </div>
-        ) : (
+        ) : messages.length === 0 ? (
           <div className="w-full max-w-xl flex flex-col items-center text-center space-y-3">
             <h1 className="text-3xl md:text-4xl font-serif text-accent font-semibold tracking-tight">
               Welcome back, {user.name || user.login}
@@ -565,6 +639,36 @@ export default function App() {
                 {notice}
               </p>
             )}
+          </div>
+        ) : (
+          <div className="w-full max-w-2xl flex flex-col space-y-4 my-auto">
+            {messages.map((m, idx) => (
+              <div
+                key={idx}
+                className={`flex w-full ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                <div
+                  className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap break-words ${
+                    m.role === 'user'
+                      ? 'bg-accent text-black font-medium'
+                      : 'bg-muted/10 text-foreground'
+                  }`}
+                >
+                  {m.content}
+                </div>
+              </div>
+            ))}
+
+            {sending && (
+              <div className="flex justify-start">
+                <div className="max-w-[80%] rounded-2xl px-4 py-3 text-sm bg-muted/10 text-foreground flex items-center gap-1">
+                  <span className="animate-bounce">.</span>
+                  <span className="animate-bounce delay-100">.</span>
+                  <span className="animate-bounce delay-200">.</span>
+                </div>
+              </div>
+            )}
+            <div ref={chatBottomRef} />
           </div>
         )}
       </main>
@@ -576,6 +680,13 @@ export default function App() {
           style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)' }}
         >
           <div className="w-full max-w-xl pointer-events-auto relative flex flex-col gap-2">
+
+            {/* Red Error Banner */}
+            {chatError && (
+              <div className="bg-red-500/10 text-red-500 border border-red-500/20 text-xs px-3 py-2 rounded-xl mb-1 text-center font-medium backdrop-blur-md animate-fade-in">
+                {chatError}
+              </div>
+            )}
 
             {/* Image Attachment Thumbnail Preview */}
             {attachedImage && (
@@ -682,8 +793,9 @@ export default function App() {
                   <button
                     type="button"
                     onClick={handleSendMessage}
+                    disabled={sending}
                     aria-label="Send message"
-                    className="w-10 h-10 rounded-full bg-black dark:bg-white text-white dark:text-black flex items-center justify-center font-bold hover:opacity-90 active:scale-95 transition-all shadow-md"
+                    className="w-10 h-10 rounded-full bg-black dark:bg-white text-white dark:text-black flex items-center justify-center font-bold hover:opacity-90 active:scale-95 transition-all shadow-md disabled:opacity-50"
                   >
                     <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M12 3v10.5m0-10.5L7.5 7.5M12 3l4.5 4.5M6 18h12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
