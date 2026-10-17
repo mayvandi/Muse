@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import rehypePrettyCode from 'rehype-pretty-code';
+import './styles/markdown.css';
 
 interface User {
   login: string;
@@ -30,6 +32,10 @@ const EXCLUDED_MODEL_KEYWORDS = [
   'prompt-guard',
   'safeguard',
 ];
+
+const rehypePrettyCodeOptions = {
+  theme: 'github-dark',
+};
 
 export default function App() {
   const [themeMode, setThemeMode] = useState<'light' | 'dark' | 'system'>(() => {
@@ -570,15 +576,13 @@ export default function App() {
   }
 
   return (
-    <div
-      className="min-h-screen flex flex-col justify-between relative overflow-hidden"
-      style={{
-        paddingTop: 'env(safe-area-inset-top)',
-      }}
-    >
+    <div className="min-h-screen flex flex-col justify-between relative">
       {/* Top Header */}
       {user && (
-        <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
+        <header
+          className="sticky top-0 z-50 bg-background/80 backdrop-blur-md px-4 py-3 flex items-center justify-between"
+          style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+        >
           <button
             onClick={() => setSettingsOpen(true)}
             aria-label="Open Settings"
@@ -598,15 +602,15 @@ export default function App() {
               <circle cx="15" cy="11" r="1" fill="currentColor" />
             </svg>
           </button>
-        </div>
+        </header>
       )}
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col items-center justify-center px-4 pt-16 pb-44 overflow-y-auto">
+      <main className="flex-1 flex flex-col items-center justify-center px-4 pt-20 pb-44 overflow-y-auto">
         {loading ? (
           <p className="text-muted text-sm">Loading...</p>
         ) : !user ? (
-          <div className="flex flex-col items-center text-center space-y-6 max-w-sm w-full">
+          <div className="flex flex-col items-center text-center space-y-6 max-w-sm w-full my-auto">
             <h1 className="text-4xl font-serif text-accent font-semibold">Aubin</h1>
             {authError && <p className="text-muted text-sm">{authError}</p>}
             <a
@@ -617,7 +621,7 @@ export default function App() {
             </a>
           </div>
         ) : user.needsReauth ? (
-          <div className="flex flex-col items-center text-center space-y-4 max-w-sm w-full">
+          <div className="flex flex-col items-center text-center space-y-4 max-w-sm w-full my-auto">
             <h1 className="text-3xl font-serif text-accent font-semibold">
               Welcome back, {user.name || user.login}
             </h1>
@@ -632,7 +636,7 @@ export default function App() {
             </a>
           </div>
         ) : messages.length === 0 ? (
-          <div className="w-full max-w-xl flex flex-col items-center text-center space-y-3">
+          <div className="w-full max-w-xl flex flex-col items-center text-center space-y-3 my-auto">
             <h1 className="text-3xl md:text-4xl font-serif text-accent font-semibold tracking-tight">
               Welcome back, {user.name || user.login}
             </h1>
@@ -659,51 +663,14 @@ export default function App() {
                   {m.role === 'user' ? (
                     m.content
                   ) : (
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
-                      components={{
-                        p: ({ children }) => <p className="my-2 first:mt-0 last:mb-0">{children}</p>,
-                        h1: ({ children }) => <h1 className="text-xl font-bold font-serif my-3 text-foreground">{children}</h1>,
-                        h2: ({ children }) => <h2 className="text-lg font-bold font-serif my-2.5 text-foreground">{children}</h2>,
-                        h3: ({ children }) => <h3 className="text-base font-bold font-serif my-2 text-foreground">{children}</h3>,
-                        ul: ({ children }) => <ul className="list-disc pl-5 my-2 space-y-1">{children}</ul>,
-                        ol: ({ children }) => <ol className="list-decimal pl-5 my-2 space-y-1">{children}</ol>,
-                        a: ({ href, children }) => (
-                          <a href={href} target="_blank" rel="noopener noreferrer" className="text-accent underline font-medium hover:opacity-80">
-                            {children}
-                          </a>
-                        ),
-                        code: ({ node, className, children, ...props }: any) => {
-                          const match = /language-(\w+)/.exec(className || '');
-                          const isInline = !match && !String(children).includes('\n');
-                          return isInline ? (
-                            <code className="bg-muted/10 px-1.5 py-0.5 rounded text-sm font-mono text-accent" {...props}>
-                              {children}
-                            </code>
-                          ) : (
-                            <code className="block bg-muted/10 rounded-lg p-3 font-mono text-sm overflow-x-auto my-2" {...props}>
-                              {children}
-                            </code>
-                          );
-                        },
-                        pre: ({ children }) => <div className="my-2">{children}</div>,
-                        table: ({ children }) => (
-                          <div className="overflow-x-auto my-3">
-                            <table className="w-full text-left border-collapse border border-muted/20 text-sm">
-                              {children}
-                            </table>
-                          </div>
-                        ),
-                        th: ({ children }) => (
-                          <th className="border border-muted/20 p-2 font-semibold bg-muted/10">{children}</th>
-                        ),
-                        td: ({ children }) => (
-                          <td className="border border-muted/20 p-2">{children}</td>
-                        ),
-                      }}
-                    >
-                      {m.content}
-                    </ReactMarkdown>
+                    <div className="markdown-content">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        rehypePlugins={[[rehypePrettyCode, rehypePrettyCodeOptions]]}
+                      >
+                        {m.content}
+                      </ReactMarkdown>
+                    </div>
                   )}
                 </div>
               </div>

@@ -12,7 +12,9 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-markdown": "^10.1.0",
-    "remark-gfm": "^4.0.1"
+    "rehype-pretty-code": "^0.14.5",
+    "remark-gfm": "^4.0.1",
+    "shiki": "^4.5.0"
   },
   "devDependencies": {
     "@types/react": "^19.2.0",
