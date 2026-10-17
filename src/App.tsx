@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { Component, ErrorInfo, ReactNode, useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import rehypePrettyCode from 'rehype-pretty-code';
+import rehypeHighlight from 'rehype-highlight';
+import 'highlight.js/styles/github-dark.css';
 import './styles/markdown.css';
 
 interface User {
@@ -14,6 +15,40 @@ interface User {
 interface Message {
   role: 'user' | 'assistant';
   content: string;
+}
+
+interface ErrorBoundaryProps {
+  children: ReactNode;
+  fallbackContent?: string;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+}
+
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  public state: ErrorBoundaryState = {
+    hasError: false,
+  };
+
+  public static getDerivedStateFromError(_: Error): ErrorBoundaryState {
+    return { hasError: true };
+  }
+
+  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('Markdown rendering error:', error, errorInfo);
+  }
+
+  public render() {
+    if (this.state.hasError) {
+      return (
+        <div className="text-foreground whitespace-pre-wrap font-sans text-sm">
+          {this.props.fallbackContent}
+        </div>
+      );
+    }
+    return this.props.children;
+  }
 }
 
 const PROVIDER_ENDPOINTS: Record<string, string> = {
@@ -32,10 +67,6 @@ const EXCLUDED_MODEL_KEYWORDS = [
   'prompt-guard',
   'safeguard',
 ];
-
-const rehypePrettyCodeOptions = {
-  theme: 'github-dark',
-};
 
 export default function App() {
   const [themeMode, setThemeMode] = useState<'light' | 'dark' | 'system'>(() => {
@@ -663,14 +694,16 @@ export default function App() {
                   {m.role === 'user' ? (
                     m.content
                   ) : (
-                    <div className="markdown-content">
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        rehypePlugins={[[rehypePrettyCode, rehypePrettyCodeOptions]]}
-                      >
-                        {m.content}
-                      </ReactMarkdown>
-                    </div>
+                    <ErrorBoundary fallbackContent={m.content}>
+                      <div className="markdown-content">
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          rehypePlugins={[rehypeHighlight]}
+                        >
+                          {m.content}
+                        </ReactMarkdown>
+                      </div>
+                    </ErrorBoundary>
                   )}
                 </div>
               </div>
