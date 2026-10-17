@@ -1,6 +1,8 @@
 .markdown-content {
   line-height: 1.6;
-  font-size: 0.875rem;
+  font-size: 15px;
+  font-family: Inter, system-ui, sans-serif;
+  color: var(--ink);
 }
 
 .markdown-content p {
@@ -18,8 +20,8 @@
 .markdown-content h1,
 .markdown-content h2,
 .markdown-content h3 {
-  font-family: Lora, serif;
-  font-weight: 700;
+  font-family: Lora, Georgia, serif;
+  font-weight: 600;
   margin: 1rem 0 0.5rem 0;
   color: var(--ink);
 }
@@ -28,16 +30,18 @@
 .markdown-content h2 { font-size: 1.125rem; }
 .markdown-content h3 { font-size: 1rem; }
 
+.markdown-content ul,
+.markdown-content ol {
+  margin: 0.5rem 0;
+  padding-left: 1.25rem;
+}
+
 .markdown-content ul {
   list-style-type: disc;
-  padding-left: 1.25rem;
-  margin: 0.5rem 0;
 }
 
 .markdown-content ol {
   list-style-type: decimal;
-  padding-left: 1.25rem;
-  margin: 0.5rem 0;
 }
 
 .markdown-content li {
@@ -50,8 +54,9 @@
 }
 
 .markdown-content table {
-  border-collapse: collapse;
   width: 100%;
+  font-size: 0.875rem;
+  border-collapse: collapse;
   margin: 1rem 0;
 }
 
@@ -63,13 +68,15 @@
 }
 
 .markdown-content code:not(pre code) {
+  font-family: monospace;
   background: rgba(255, 255, 255, 0.1);
   padding: 0.2rem 0.4rem;
   border-radius: 4px;
-  font-family: monospace;
 }
 
 .markdown-content pre {
+  white-space: pre;
+  word-break: normal;
   border-radius: 8px;
   padding: 1rem;
   overflow-x: auto;

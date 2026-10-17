@@ -362,14 +362,8 @@ export default function App() {
 
   if (settingsOpen) {
     return (
-      <div
-        className="min-h-screen flex flex-col font-sans"
-        style={{
-          paddingTop: 'env(safe-area-inset-top)',
-          paddingBottom: 'env(safe-area-inset-bottom)'
-        }}
-      >
-        <header className="flex items-center px-4 py-3">
+      <div className="flex flex-col h-[100dvh] bg-background text-foreground font-sans">
+        <header className="flex-none flex items-center px-4 py-3" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
           <button
             onClick={() => setSettingsOpen(false)}
             className="min-h-[44px] min-w-[44px] flex items-center text-muted text-xl"
@@ -388,10 +382,7 @@ export default function App() {
           </button>
         </header>
 
-        <main
-          className="flex-1 overflow-y-auto px-4 max-w-2xl mx-auto w-full font-sans"
-          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 120px)' }}
-        >
+        <main className="flex-1 overflow-y-auto px-4 pb-24 max-w-2xl mx-auto w-full font-sans">
           {user && (
             <section className="mb-6">
               <div className="flex items-center gap-3 py-3 px-3 rounded-2xl bg-muted/5">
@@ -607,17 +598,17 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col justify-between relative">
+    <div className="flex flex-col h-[100dvh] bg-background text-foreground">
       {/* Top Header */}
       {user && (
         <header
-          className="sticky top-0 z-50 bg-background/80 backdrop-blur-md px-4 py-3 flex items-center justify-between"
-          style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+          className="flex-none px-4 py-3 flex items-center justify-between"
+          style={{ paddingTop: 'env(safe-area-inset-top)' }}
         >
           <button
             onClick={() => setSettingsOpen(true)}
             aria-label="Open Settings"
-            className="w-11 h-11 rounded-full bg-muted/15 hover:bg-muted/25 backdrop-blur-md flex items-center justify-center transition-colors text-foreground"
+            className="w-11 h-11 rounded-full bg-muted/15 hover:bg-muted/25 flex items-center justify-center transition-colors text-foreground"
           >
             <svg className="w-5 h-5 text-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h12M4 18h8" />
@@ -625,7 +616,7 @@ export default function App() {
           </button>
           <button
             aria-label="Ghost placeholder"
-            className="w-11 h-11 rounded-full bg-muted/15 hover:bg-muted/25 backdrop-blur-md flex items-center justify-center transition-colors text-foreground"
+            className="w-11 h-11 rounded-full bg-muted/15 hover:bg-muted/25 flex items-center justify-center transition-colors text-foreground"
           >
             <svg className="w-6 h-6 text-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12a7.5 7.5 0 0 1 15 0v6.75a.75.75 0 0 1-1.28.53 1.5 1.5 0 0 0-2.12 0 .75.75 0 0 1-1.28-.53V18a1.5 1.5 0 0 0-3 0v.75a.75.75 0 0 1-1.28.53 1.5 1.5 0 0 0-2.12 0 .75.75 0 0 1-1.28-.53V18a1.5 1.5 0 0 0-2.12 0A.75.75 0 0 1 4.5 18.75V12z" />
@@ -636,17 +627,17 @@ export default function App() {
         </header>
       )}
 
-      {/* Main Content Area */}
-      <main className="flex-1 flex flex-col items-center justify-center px-4 pt-20 pb-44 overflow-y-auto">
+      {/* Main Chat Area */}
+      <main className="flex-1 overflow-y-auto px-4 py-4 flex flex-col items-center justify-center">
         {loading ? (
           <p className="text-muted text-sm">Loading...</p>
         ) : !user ? (
           <div className="flex flex-col items-center text-center space-y-6 max-w-sm w-full my-auto">
-            <h1 className="text-4xl font-serif text-accent font-semibold">Aubin</h1>
+            <h1 className="text-3xl font-serif text-accent font-semibold">Aubin</h1>
             {authError && <p className="text-muted text-sm">{authError}</p>}
             <a
               href="/api/auth/login"
-              className="inline-block w-full min-h-[44px] px-6 py-3 rounded-xl bg-accent text-white font-medium hover:opacity-90 transition-opacity text-center shadow-md"
+              className="inline-block w-full min-h-[44px] px-6 py-3 rounded-xl bg-accent text-white font-medium hover:opacity-90 transition-opacity text-center shadow-md font-sans"
             >
               Sign in with GitHub
             </a>
@@ -656,23 +647,23 @@ export default function App() {
             <h1 className="text-3xl font-serif text-accent font-semibold">
               Welcome back, {user.name || user.login}
             </h1>
-            <p className="text-muted text-sm">
+            <p className="text-muted text-sm font-sans">
               Aubin needs access to your repositories to continue.
             </p>
             <a
               href="/api/auth/logout"
-              className="inline-block min-h-[44px] px-6 py-3 rounded-xl bg-accent text-white font-medium hover:opacity-90 transition-opacity text-center shadow-md"
+              className="inline-block min-h-[44px] px-6 py-3 rounded-xl bg-accent text-white font-medium hover:opacity-90 transition-opacity text-center shadow-md font-sans"
             >
               Reconnect GitHub
             </a>
           </div>
         ) : messages.length === 0 ? (
           <div className="w-full max-w-xl flex flex-col items-center text-center space-y-3 my-auto">
-            <h1 className="text-3xl md:text-4xl font-serif text-accent font-semibold tracking-tight">
+            <h1 className="text-3xl font-serif text-accent font-semibold tracking-tight">
               Welcome back, {user.name || user.login}
             </h1>
             {notice && (
-              <p className="text-sm font-medium text-foreground/80 bg-muted/10 px-3 py-1.5 rounded-full backdrop-blur-sm animate-fade-in">
+              <p className="text-sm font-medium font-sans text-foreground/80 bg-muted/10 px-3 py-1.5 rounded-full backdrop-blur-sm animate-fade-in">
                 {notice}
               </p>
             )}
@@ -684,18 +675,14 @@ export default function App() {
                 key={idx}
                 className={`flex w-full ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                <div
-                  className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap break-words ${
-                    m.role === 'user'
-                      ? 'bg-accent text-black font-medium'
-                      : 'bg-muted/10 text-foreground'
-                  }`}
-                >
-                  {m.role === 'user' ? (
-                    m.content
-                  ) : (
+                {m.role === 'user' ? (
+                  <div className="max-w-[80%] bg-accent text-black font-sans rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap break-words font-medium">
+                    {m.content}
+                  </div>
+                ) : (
+                  <div className="w-full max-w-full px-0 py-2">
                     <ErrorBoundary fallbackContent={m.content}>
-                      <div className="markdown-content">
+                      <div className="markdown-content w-full text-[15px] leading-relaxed font-sans">
                         <ReactMarkdown
                           remarkPlugins={[remarkGfm]}
                           rehypePlugins={[rehypeHighlight]}
@@ -704,14 +691,14 @@ export default function App() {
                         </ReactMarkdown>
                       </div>
                     </ErrorBoundary>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             ))}
 
             {sending && (
               <div className="flex justify-start">
-                <div className="max-w-[80%] rounded-2xl px-4 py-3 text-sm bg-muted/10 text-foreground flex items-center gap-1">
+                <div className="max-w-[80%] rounded-2xl px-4 py-3 text-sm bg-muted/10 text-foreground flex items-center gap-1 font-sans">
                   <span className="animate-bounce">.</span>
                   <span className="animate-bounce delay-100">.</span>
                   <span className="animate-bounce delay-200">.</span>
@@ -723,17 +710,14 @@ export default function App() {
         )}
       </main>
 
-      {/* Liquid Glass Bottom Input Area for Signed-In Users */}
+      {/* Input Box Bottom Bar */}
       {user && !user.needsReauth && (
-        <div
-          className="fixed bottom-0 left-0 right-0 p-4 z-20 flex flex-col items-center pointer-events-none"
-          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)' }}
-        >
-          <div className="w-full max-w-xl pointer-events-auto relative flex flex-col gap-2">
+        <div className="flex-none w-full px-4 pt-2 pb-[calc(env(safe-area-inset-bottom)+12px)] bg-background">
+          <div className="w-full max-w-xl mx-auto relative flex flex-col gap-2">
 
             {/* Red Error Banner */}
             {chatError && (
-              <div className="bg-red-500/10 text-red-500 border border-red-500/20 text-xs px-3 py-2 rounded-xl mb-1 text-center font-medium backdrop-blur-md animate-fade-in">
+              <div className="bg-red-500/10 text-red-500 border border-red-500/20 text-xs px-3 py-2 rounded-xl mb-1 text-center font-medium font-sans animate-fade-in">
                 {chatError}
               </div>
             )}
@@ -757,7 +741,7 @@ export default function App() {
             {showModelPicker && (
               <div className="liquid-glass rounded-2xl p-2 mb-1 max-h-48 overflow-y-auto shadow-2xl z-30">
                 {modelsList.length === 0 ? (
-                  <p className="text-xs text-muted p-2 text-center">No models loaded. Set API key in Settings.</p>
+                  <p className="text-xs text-muted p-2 text-center font-sans">No models loaded. Set API key in Settings.</p>
                 ) : (
                   modelsList.map(m => (
                     <button
@@ -767,7 +751,7 @@ export default function App() {
                         setModel(m);
                         setShowModelPicker(false);
                       }}
-                      className={`w-full text-left px-3 py-2 text-xs rounded-xl font-medium truncate flex items-center justify-between ${
+                      className={`w-full text-left px-3 py-2 text-xs rounded-xl font-medium font-sans truncate flex items-center justify-between ${
                         m === model ? 'bg-accent/15 text-accent font-semibold' : 'text-foreground hover:bg-muted/10'
                       }`}
                     >
@@ -790,7 +774,7 @@ export default function App() {
                   onKeyDown={handleKeyDown}
                   placeholder="Chat with Aubin"
                   rows={1}
-                  className="w-full bg-transparent border-0 resize-none text-foreground placeholder:text-muted/60 focus:outline-none text-base font-normal leading-snug max-h-32"
+                  className="w-full bg-transparent border-0 resize-none text-foreground placeholder:text-muted/60 focus:outline-none text-base font-normal font-sans leading-snug max-h-32"
                 />
               </div>
 
@@ -809,7 +793,7 @@ export default function App() {
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     aria-label="Attach image"
-                    className="w-10 h-10 rounded-full glass-pill flex items-center justify-center text-foreground font-light text-xl hover:opacity-80 transition-all"
+                    className="w-10 h-10 rounded-full glass-pill flex items-center justify-center text-foreground font-light text-xl hover:opacity-80 transition-all font-sans"
                   >
                     +
                   </button>
@@ -817,7 +801,7 @@ export default function App() {
                   <button
                     type="button"
                     onClick={() => setShowModelPicker(!showModelPicker)}
-                    className="h-10 px-3.5 rounded-full glass-pill flex items-center gap-1.5 text-xs font-medium text-foreground hover:opacity-80 transition-all truncate max-w-[180px]"
+                    className="h-10 px-3.5 rounded-full glass-pill flex items-center gap-1.5 text-xs font-medium font-sans text-foreground hover:opacity-80 transition-all truncate max-w-[180px]"
                   >
                     <span className="truncate">{displayModelName}</span>
                     <span className="text-[10px] opacity-60">▼</span>
@@ -845,7 +829,7 @@ export default function App() {
                     onClick={handleSendMessage}
                     disabled={sending}
                     aria-label="Send message"
-                    className="w-10 h-10 rounded-full bg-black dark:bg-white text-white dark:text-black flex items-center justify-center font-bold hover:opacity-90 active:scale-95 transition-all shadow-md disabled:opacity-50"
+                    className="w-10 h-10 rounded-full bg-black dark:bg-white text-white dark:text-black flex items-center justify-center font-bold hover:opacity-90 active:scale-95 transition-all shadow-md disabled:opacity-50 font-sans"
                   >
                     <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M12 3v10.5m0-10.5L7.5 7.5M12 3l4.5 4.5M6 18h12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
