@@ -598,42 +598,40 @@ export default function App() {
   }
 
   return (
-    <div className="flex flex-col h-[100dvh] bg-background text-foreground">
-      {/* Top Header */}
+    <div className="flex flex-col h-[100dvh] bg-background text-foreground overflow-hidden relative">
+      {/* Floating Header Buttons */}
       {user && (
-        <header
-          className="flex-none px-4 py-3 flex items-center justify-between"
-          style={{ paddingTop: 'env(safe-area-inset-top)' }}
-        >
+        <div className="fixed top-0 left-0 right-0 z-50 flex justify-between px-4 pt-[calc(env(safe-area-inset-top)+8px)] pointer-events-none">
           <button
             onClick={() => setSettingsOpen(true)}
             aria-label="Open Settings"
-            className="w-11 h-11 rounded-full bg-muted/15 hover:bg-muted/25 flex items-center justify-center transition-colors text-foreground"
+            className="pointer-events-auto w-11 h-11 rounded-full liquid-glass flex items-center justify-center text-foreground transition-colors"
           >
-            <svg className="w-5 h-5 text-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h12M4 18h8" />
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+              <line x1="3" y1="6" x2="17" y2="6" />
+              <line x1="3" y1="10" x2="17" y2="10" />
+              <line x1="3" y1="14" x2="17" y2="14" />
             </svg>
           </button>
+
           <button
-            aria-label="Ghost placeholder"
-            className="w-11 h-11 rounded-full bg-muted/15 hover:bg-muted/25 flex items-center justify-center transition-colors text-foreground"
+            aria-label="Ghost"
+            className="pointer-events-auto w-11 h-11 rounded-full liquid-glass flex items-center justify-center text-foreground transition-colors"
           >
-            <svg className="w-6 h-6 text-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12a7.5 7.5 0 0 1 15 0v6.75a.75.75 0 0 1-1.28.53 1.5 1.5 0 0 0-2.12 0 .75.75 0 0 1-1.28-.53V18a1.5 1.5 0 0 0-3 0v.75a.75.75 0 0 1-1.28.53 1.5 1.5 0 0 0-2.12 0 .75.75 0 0 1-1.28-.53V18a1.5 1.5 0 0 0-2.12 0A.75.75 0 0 1 4.5 18.75V12z" />
-              <circle cx="9" cy="11" r="1" fill="currentColor" />
-              <circle cx="15" cy="11" r="1" fill="currentColor" />
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 10h.01"></path><path d="M15 10h.01"></path><path d="M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5 2.5-2.5 3 3V10a8 8 0 0 0-8-8z"></path>
             </svg>
           </button>
-        </header>
+        </div>
       )}
 
       {/* Main Chat Area */}
-      <main className="flex-1 overflow-y-auto px-4 py-4 flex flex-col items-center justify-center">
+      <main className="flex-1 overflow-y-auto px-4 py-4 pt-24 flex flex-col items-center justify-center">
         {loading ? (
           <p className="text-muted text-sm">Loading...</p>
         ) : !user ? (
           <div className="flex flex-col items-center text-center space-y-6 max-w-sm w-full my-auto">
-            <h1 className="text-3xl font-serif text-accent font-semibold">Aubin</h1>
+            <h1 className="text-3xl font-serif text-accent font-semibold text-center">Aubin</h1>
             {authError && <p className="text-muted text-sm">{authError}</p>}
             <a
               href="/api/auth/login"
@@ -644,7 +642,7 @@ export default function App() {
           </div>
         ) : user.needsReauth ? (
           <div className="flex flex-col items-center text-center space-y-4 max-w-sm w-full my-auto">
-            <h1 className="text-3xl font-serif text-accent font-semibold">
+            <h1 className="text-3xl font-serif text-accent font-semibold text-center">
               Welcome back, {user.name || user.login}
             </h1>
             <p className="text-muted text-sm font-sans">
@@ -659,7 +657,7 @@ export default function App() {
           </div>
         ) : messages.length === 0 ? (
           <div className="w-full max-w-xl flex flex-col items-center text-center space-y-3 my-auto">
-            <h1 className="text-3xl font-serif text-accent font-semibold tracking-tight">
+            <h1 className="text-3xl font-serif text-accent font-semibold text-center">
               Welcome back, {user.name || user.login}
             </h1>
             {notice && (
@@ -712,7 +710,7 @@ export default function App() {
 
       {/* Input Box Bottom Bar */}
       {user && !user.needsReauth && (
-        <div className="flex-none w-full px-4 pt-2 pb-[calc(env(safe-area-inset-bottom)+12px)] bg-background">
+        <div className="flex-none w-full px-4 pt-2 pb-[calc(env(safe-area-inset-bottom)+12px)] bg-background z-10">
           <div className="w-full max-w-xl mx-auto relative flex flex-col gap-2">
 
             {/* Red Error Banner */}
@@ -793,7 +791,7 @@ export default function App() {
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     aria-label="Attach image"
-                    className="w-10 h-10 rounded-full glass-pill flex items-center justify-center text-foreground font-light text-xl hover:opacity-80 transition-all font-sans"
+                    className="w-10 h-10 rounded-full flex items-center justify-center glass-pill text-foreground shrink-0 font-light text-xl hover:opacity-80 transition-all font-sans"
                   >
                     +
                   </button>
