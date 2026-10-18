@@ -2,22 +2,22 @@
   line-height: 1.6;
   font-size: 15px;
   font-family: Inter, system-ui, sans-serif;
-  color: var(--ink);
+  color: var(--ink, inherit);
 }
-.markdown-content p {
-  margin: 0.5rem 0;
-}
+
+.markdown-content p { margin: 0.5rem 0; }
 .markdown-content p:first-child { margin-top: 0; }
 .markdown-content p:last-child { margin-bottom: 0; }
+
 .markdown-content h1, .markdown-content h2, .markdown-content h3 {
   font-family: Lora, Georgia, serif;
   font-weight: 600;
   margin: 1rem 0 0.5rem 0;
-  color: var(--ink);
 }
 .markdown-content h1 { font-size: 1.25rem; }
 .markdown-content h2 { font-size: 1.125rem; }
 .markdown-content h3 { font-size: 1rem; }
+
 .markdown-content ul, .markdown-content ol {
   margin: 0.5rem 0;
   padding-left: 1.25rem;
@@ -25,7 +25,43 @@
 .markdown-content ul { list-style-type: disc; }
 .markdown-content ol { list-style-type: decimal; }
 .markdown-content li { margin: 0.25rem 0; }
-.markdown-content a { color: var(--accent); text-decoration: underline; }
+
+/* Custom Checkbox for Execution Plan */
+.markdown-content input[type="checkbox"] {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 8px;
+  position: relative;
+}
+.markdown-content input[type="checkbox"]:checked {
+  background-color: var(--accent, #d97757);
+  border-color: var(--accent, #d97757);
+}
+.markdown-content input[type="checkbox"]:checked::after {
+  content: '✓';
+  position: absolute;
+  color: white;
+  font-size: 10px;
+  top: -2px;
+  left: 2px;
+}
+.markdown-content li:has(input[type="checkbox"]) {
+  list-style-type: none;
+  margin-left: -20px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  margin-bottom: 6px;
+}
+
+.markdown-content a { color: var(--accent, #d97757); text-decoration: underline; }
+
 .markdown-content table {
   width: 100%;
   font-size: 0.875rem;
@@ -37,23 +73,25 @@
   padding: 0.5rem;
   text-align: left;
 }
+
 .markdown-content code:not(pre code) {
   font-family: 'JetBrains Mono', monospace;
   background: rgba(255, 255, 255, 0.1);
   padding: 0.2rem 0.4rem;
   border-radius: 4px;
 }
+
 .markdown-content pre {
   white-space: pre;
   word-break: normal;
   border-radius: 8px;
-  padding: 0.75rem; /* Smaller padding */
+  padding: 0.75rem;
   overflow-x: auto;
   background: #0d1117;
   margin: 0.75rem 0;
 }
 .markdown-content pre code {
-  font-size: 0.75rem; /* 50% smaller font for code blocks */
+  font-size: 0.75rem;
   line-height: 1.4;
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
 }
