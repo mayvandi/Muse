@@ -78,6 +78,8 @@ export default function App() {
   const [notice, setNotice] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [repoList, setRepoList] = useState<string[]>([]);
+  const [selectedRepo, setSelectedRepo] = useState(() => localStorage.getItem('aubin-selected-repo') || '');
 
   // Chat state
   const [messages, setMessages] = useState<Message[]>([]);
@@ -96,7 +98,6 @@ export default function App() {
   const [showModelPicker, setShowModelPicker] = useState(false);
 
   // Settings state
-  const [selectedRepo, setSelectedRepo] = useState(() => localStorage.getItem('aubin-repo') || 'All Repositories');
   const [provider, setProvider] = useState(() => localStorage.getItem('aubin-provider') || 'groq');
   const [model, setModel] = useState(() => localStorage.getItem('aubin-model') || '');
   const [apiKey, setApiKey] = useState(() => localStorage.getItem('aubin-api-key') || '');
@@ -119,10 +120,6 @@ export default function App() {
     document.documentElement.classList.toggle('dark', isDark);
     localStorage.setItem('aubin-theme', themeMode);
   }, [themeMode]);
-
-  useEffect(() => {
-    localStorage.setItem('aubin-repo', selectedRepo);
-  }, [selectedRepo]);
 
   useEffect(() => {
     localStorage.setItem('aubin-provider', provider);
@@ -294,6 +291,8 @@ export default function App() {
       });
   }, []);
 
+  useEffect(() => { if (user) { fetch('/api/repos').then(r => r.json()).then(d => { if (d.repos) setRepoList(d.repos); }); } }, [user]);
+
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -327,6 +326,7 @@ export default function App() {
           model,
           apiKey,
           messages: updatedMessages,
+          selectedRepo,
         }),
       });
 
@@ -419,24 +419,19 @@ export default function App() {
                 <span className="text-muted text-sm">{user ? `@${user.login}` : 'Not connected'}</span>
               </div>
               <div className="border-t border-muted/20" />
-              <div className="flex items-center justify-between px-4 py-3.5">
+              <div className="flex items-center justify-between px-4 py-4">
                 <div className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                  </svg>
-                  <span className="text-foreground text-sm font-medium">Repositories</span>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-1.22-1.8A2 2 0 0 0 9.51 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"></path></svg>
+                  <span className="font-sans text-foreground">Repositories</span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <select
-                    value={selectedRepo}
-                    onChange={e => setSelectedRepo(e.target.value)}
-                    className="bg-transparent text-muted text-sm focus:outline-none cursor-pointer text-right"
-                  >
-                    <option value="All Repositories" className="bg-background text-foreground">All Repositories</option>
-                    <option value="Current Repo" className="bg-background text-foreground">Current Repo</option>
-                  </select>
-                  <span className="text-muted text-sm">›</span>
-                </div>
+                <select
+                  value={selectedRepo}
+                  onChange={e => { setSelectedRepo(e.target.value); localStorage.setItem('aubin-selected-repo', e.target.value); }}
+                  className="font-sans bg-transparent text-right outline-none max-w-[60%] text-muted text-sm appearance-none"
+                >
+                  <option value="">Select repo...</option>
+                  {repoList.map(r => <option key={r} value={r}>{r}</option>)}
+                </select>
               </div>
             </div>
           </section>

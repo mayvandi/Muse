@@ -2,15 +2,16 @@ export const config = { maxDuration: 60 };
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-  const { provider, model, apiKey, messages } = req.body || {};
+  const { provider, model, apiKey, messages, selectedRepo } = req.body || {};
   if (!provider || !model || !apiKey || !Array.isArray(messages)) {
     return res.status(400).json({ error: 'Missing provider, model, apiKey, or messages' });
   }
 
   const systemPrompt = "You are Aubin, a helpful AI coding agent. Help users write, debug, and explain code. Use markdown for code blocks.";
+  const repoContext = selectedRepo ? `The currently selected repository is ${selectedRepo}. Use this repo for all file operations unless the user specifies otherwise.` : 'Ask the user to select a repository in Settings if they want to edit files.';
 
   const formattedMessages = [
-    { role: 'system', content: systemPrompt },
+    { role: 'system', content: systemPrompt + '\n' + repoContext },
     ...messages
   ];
 
