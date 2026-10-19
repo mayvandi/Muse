@@ -16,7 +16,7 @@ export default async function handler(req, res) {
     `oauth_state=${state}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=600`
   ]);
 
-  const authUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&scope=read:user&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`;
+  const authUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&scope=repo&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`;
 
   res.statusCode = 302;
   res.setHeader('Location', authUrl);
