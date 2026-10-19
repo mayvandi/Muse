@@ -421,8 +421,8 @@ export default function App() {
         </button>
       </div>
 
-      {/* Chat Area (Padding bottom besar agar bisa di-scroll di bawah input kaca) */}
-      <main className="flex-1 overflow-y-auto px-4 pt-24 pb-40 flex flex-col">
+      {/* Chat Area */}
+      <main className="flex-1 overflow-y-auto px-4 pt-24 pb-48 flex flex-col">
         {messages.length === 0 ? (
           <div className="w-full max-w-xl flex flex-col items-center text-center space-y-3 my-auto mt-20">
             <h1 className="text-3xl font-serif text-accent font-semibold text-center">Welcome back, {user.name || user.login}</h1>
@@ -461,8 +461,8 @@ export default function App() {
         )}
       </main>
 
-      {/* Input Area (Fixed melayang, wrapper transparan total) */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 px-4 pb-[calc(env(safe-area-inset-bottom)+12px)] bg-transparent pointer-events-none">
+      {/* Input Area (Fixed, lebih mentok ke bawah, transparansi pas) */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 px-4 pb-[calc(env(safe-area-inset-bottom)+6px)] pt-2 bg-transparent pointer-events-none">
         <div className="w-full max-w-xl mx-auto relative flex flex-col gap-2 pointer-events-auto">
           
           {chatError && (
@@ -493,8 +493,8 @@ export default function App() {
             </div>
           )}
 
-          {/* KOTAK INPUT KACA (Lebih Transparan) */}
-          <form onSubmit={handleSendMessage} className="relative w-full rounded-[32px] bg-white/40 dark:bg-zinc-900/40 backdrop-blur-3xl border border-black/10 dark:border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.2)] flex flex-col p-2">
+          {/* KOTAK INPUT KACA (Lebih terang, tidak gelap saat ada kode di belakangnya) */}
+          <form onSubmit={handleSendMessage} className="relative w-full rounded-[32px] bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl backdrop-brightness-125 border border-black/10 dark:border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.2)] flex flex-col p-2">
             <div className="px-1 pt-1">
               <textarea
                 ref={textareaRef}
