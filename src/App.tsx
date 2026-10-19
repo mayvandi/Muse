@@ -1,5 +1,5 @@
 import { Component, ErrorInfo, ReactNode, useEffect, useRef, useState } from 'react';
-import LiquidGlass from 'liquid-glass-react';
+import { LiquidGlassView as LiquidGlass } from '@zerocoder1/liquid-glass/react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
@@ -758,7 +758,7 @@ export default function App() {
             )}
 
             {/* Liquid Glass Container Card */}
-            <LiquidGlass className="w-full rounded-[28px]" cornerRadius={28} blurAmount={10} aberrationIntensity={2}>
+            <LiquidGlass className="w-full rounded-[28px]">
               <div className="p-3 flex flex-col gap-2">
                 {/* Row 1: Top Textarea Input */}
                 <div className="px-1 pt-1">
