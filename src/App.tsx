@@ -345,16 +345,16 @@ export default function App() {
                   <option value="deepseek" className="bg-background text-foreground">DeepSeek</option>
                   <option value="openrouter" className="bg-background text-foreground">OpenRouter</option>
                   <option value="anthropic" className="bg-background text-foreground">Anthropic</option>
-                  <option value="openai" className="bg-background text-foreground">-[OpenAI</option>
+                  <option value="openai" className="bg-background text-foreground">OpenAI</option>
                 </select>
               </div>
-              <div className="flex flex-col px-4 py-3.5 border-b border-muted/20px">
-                <div className="flex items-center justify]-between">
-                  <div className="flex items-center gapate-3">
+              <div className="flex flex-col px-4 py-3.5 border-b border-muted/20">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
                     <svg className="w-5 h-5 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
                     <span className="text-foreground text-sm font-medium">Model</span>
                   </div>
-                  <select value={model} onChange={e => setModel(e.target.value)} disabled={!apiKey.trim() || fetchingModels || modelsList.length === 0} className="bg-transparent text-muted text-sm focus:outline-none cursor-pointer text-right max-w disabled:opacity-50 appearance-none">
+                  <select value={model} onChange={e => setModel(e.target.value)} disabled={!apiKey.trim() || fetchingModels || modelsList.length === 0} className="bg-transparent text-muted text-sm focus:outline-none cursor-pointer text-right max-w-[200px] truncate disabled:opacity-50 appearance-none">
                     {!apiKey.trim() ? <option value="" className="bg-background text-foreground">Add API key first</option> : fetchingModels ? <option value="" className="bg-background text-foreground">Loading...</option> : modelsList.length === 0 ? <option value="" className="bg-background text-foreground">No models</option> : modelsList.map(m => <option key={m} value={m} className="bg-background text-foreground">{m}</option>)}
                   </select>
                 </div>
@@ -409,7 +409,9 @@ export default function App() {
   }
 
   return (
-    <div className="flex flex-col h-[100dvh] bg-background text-foreground overflow-hidden relative">
+    <div className="flex flex-col h-[100dvh] bg-background text-foreground relative overflow-hidden">
+      
+      {/* Floating Header Buttons */}
       <div className="fixed top-0 left-0 right-0 z-50 flex justify-between px-4 pt-[calc(env(safe-area-inset-top)+8px)] pointer-events-none">
         <button onClick={() => setSettingsOpen(true)} aria-label="Open Settings" className="pointer-events-auto w-11 h-11 rounded-full flex items-center justify-center bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl border border-black/5 dark:border-white/10 shadow-sm text-foreground transition-colors">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><line x1="3" y1="6" x2="17" y2="6" /><line x1="3" y1="10" x2="17" y2="10" /><line x1="3" y1="14" x2="17" y2="14" /></svg>
@@ -419,23 +421,28 @@ export default function App() {
         </button>
       </div>
 
-      <main className="flex-1 overflow-y-auto px-4 py-4 pt-24 flex flex-col items-center justify-center">
+      {/* Chat Area (Padding bottom besar agar bisa di-scroll di bawah input kaca) */}
+      <main className="flex-1 overflow-y-auto px-4 pt-24 pb-40 flex flex-col">
         {messages.length === 0 ? (
-          <div className="w-full max-w-xl flex flex-col items-center text-center space-y-3 my-auto">
+          <div className="w-full max-w-xl flex flex-col items-center text-center space-y-3 my-auto mt-20">
             <h1 className="text-3xl font-serif text-accent font-semibold text-center">Welcome back, {user.name || user.login}</h1>
             {notice && <p className="text-sm font-medium font-sans text-foreground/80 bg-muted/10 px-3 py-1.5 rounded-full backdrop-blur-sm animate-fade-in">{notice}</p>}
           </div>
         ) : (
-          <div className="w-full max-w-2xl flex flex-col space-y-4 my-auto">
+          <div className="w-full max-w-2xl mx-auto flex flex-col space-y-4">
             {messages.map((m, idx) => (
               <div key={idx} className={`flex w-full ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 {m.role === 'user' ? (
-                  <div className="max-w-[80%] bg-accent text-black font-sans rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap break-words font-medium">{m.content}</div>
+                  <div className="max-w-[80%] bg-accent text-black font-sans rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap break-words font-medium">
+                    {m.content}
+                  </div>
                 ) : (
                   <div className="w-full max-w-full px-0 py-2">
                     <ErrorBoundary fallbackContent={m.content}>
                       <div className="markdown-content w-full text-[15px] leading-relaxed font-sans">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>{m.content}</ReactMarkdown>
+                        <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
+                          {m.content}
+                        </ReactMarkdown>
                       </div>
                     </ErrorBoundary>
                   </div>
@@ -454,9 +461,15 @@ export default function App() {
         )}
       </main>
 
-      <div className="flex-none w-full px-4 pt-2 pb-[calc(env(safe-area-inset-bottom)+12px)] bg-transparent z-10">
-        <div className="w-full max-w-xl mx-auto relative flex flex-col gap-2">
-          {chatError && <div className="bg-red-500/10 text-red-500 border border-red-500/20 text-xs px-3 py-2 rounded-xl mb-1 text-center font-medium font-sans animate-fade-in">{chatError}</div>}
+      {/* Input Area (Fixed melayang, wrapper transparan total) */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 px-4 pb-[calc(env(safe-area-inset-bottom)+12px)] bg-transparent pointer-events-none">
+        <div className="w-full max-w-xl mx-auto relative flex flex-col gap-2 pointer-events-auto">
+          
+          {chatError && (
+            <div className="bg-red-500/10 text-red-500 border border-red-500/20 text-xs px-3 py-2 rounded-xl text-center font-medium font-sans animate-fade-in mb-1">
+              {chatError}
+            </div>
+          )}
           
           {attachedImage && (
             <div className="self-start relative group rounded-2xl overflow-hidden border border-black/10 dark:border-white/20 shadow-lg mb-1">
@@ -466,7 +479,7 @@ export default function App() {
           )}
 
           {showModelPicker && (
-            <div className="bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl border border-black/10 dark:border-white/10 rounded-2xl p-2 mb-1 max-h-48 overflow-y-auto shadow-2xl z-30 absolute bottom-full left-0 w-full mb-2">
+            <div className="bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl border border-black/10 dark:border-white/10 rounded-2xl p-2 max-h-48 overflow-y-auto shadow-2xl absolute bottom-full left-0 w-full mb-2">
               {modelsList.length === 0 ? (
                 <p className="text-xs text-muted p-2 text-center font-sans">No models loaded. Set API key in Settings.</p>
               ) : (
@@ -480,7 +493,8 @@ export default function App() {
             </div>
           )}
 
-          <form onSubmit={handleSendMessage} className="relative w-full rounded-[28px] bg-white/70 dark:bg-zinc-900/60 backdrop-blur-2xl border border-black/10 dark:border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.15)] flex flex-col p-3 gap-2">
+          {/* KOTAK INPUT KACA (Lebih Transparan) */}
+          <form onSubmit={handleSendMessage} className="relative w-full rounded-[32px] bg-white/40 dark:bg-zinc-900/40 backdrop-blur-3xl border border-black/10 dark:border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.2)] flex flex-col p-2">
             <div className="px-1 pt-1">
               <textarea
                 ref={textareaRef}
@@ -489,11 +503,11 @@ export default function App() {
                 onKeyDown={handleKeyDown}
                 placeholder="Chat with Aubin"
                 rows={1}
-                className="w-full bg-transparent border-0 resize-none text-foreground placeholder:text-muted/60 focus:outline-none text-base font-normal font-sans leading-snug max-h-32"
+                className="w-full bg-transparent border-0 resize-none text-foreground placeholder:text-muted focus:outline-none text-[16px] font-normal font-sans leading-snug max-h-32"
               />
             </div>
 
-            <div className="flex items-center justify-between pt-1">
+            <div className="flex items-center justify-between pt-1 px-1">
               <div className="flex items-center gap-2">
                 <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageSelect} className="hidden" />
                 <button type="button" onClick={() => fileInputRef.current?.click()} aria-label="Attach image" className="w-10 h-10 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/10 text-foreground shrink-0 font-light text-xl hover:opacity-80 transition-all font-sans">+</button>
