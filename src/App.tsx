@@ -706,138 +706,345 @@ export default function App() {
 
       {/* Input Box Bottom Bar */}
       {user && !user.needsReauth && (
-        <div className="flex-none w-full px-4 pt-2 pb-[calc(env(safe-area-inset-bottom)+12px)] bg-background z-10">
-          <div className="w-full max-w-xl mx-auto relative flex flex-col gap-2">
+        import { useEffect, useState, useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypePrettyCode from 'rehype-pretty-code';
 
-            {/* Red Error Banner */}
-            {chatError && (
-              <div className="bg-red-500/10 text-red-500 border border-red-500/20 text-xs px-3 py-2 rounded-xl mb-1 text-center font-medium font-sans animate-fade-in">
-                {chatError}
+interface User {
+  login: string;
+  name: string | null;
+  avatar_url: string;
+  needsReauth?: boolean;
+}
+
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export default function App() {
+  const [dark, setDark] = useState(() => localStorage.getItem('aubin-theme') === 'dark');
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [input, setInput] = useState('');
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [sending, setSending] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Settings State
+  const [provider, setProvider] = useState(() => localStorage.getItem('aubin-provider') || 'groq');
+  const [model, setModel] = useState(() => localStorage.getItem('aubin-model') || '');
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem('aubin-api-key') || '');
+  const [models, setModels] = useState<string[]>([]);
+  const [loadingModels, setLoadingModels] = useState(false);
+  const [repoList, setRepoList] = useState<string[]>([]);
+  const [selectedRepo, setSelectedRepo] = useState(() => localStorage.getItem('aubin-selected-repo') || '');
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', dark);
+    localStorage.setItem('aubin-theme', dark ? 'dark' : 'light');
+  }, [dark]);
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then(res => (res.ok ? res.json() : null))
+      .then(data => {
+        setUser(data);
+        if (data) {
+          const savedMsgs = localStorage.getItem(`aubin-chat-${data.login}`);
+          if (savedMsgs) setMessages(JSON.parse(savedMsgs));
+        }
+        setLoading(false);
+      })
+      .catch(() => {
+        setUser(null);
+        setLoading(false);
+      });
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      fetch('/api/repos').then(r => r.json()).then(d => {
+        if (d.repos) setRepoList(d.repos);
+      }).catch(() => {});
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (user && messages.length > 0) {
+      localStorage.setItem(`aubin-chat-${user.login}`, JSON.stringify(messages.slice(-100)));
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, user]);
+
+  const handleSubmit = async (e?: React.FormEvent, overrideInput?: string) => {
+    if (e) e.preventDefault();
+    const textToSend = overrideInput || input;
+    if (!textToSend.trim() || sending) return;
+
+    if (!apiKey) {
+      setChatError('Please add an API key in Settings first.');
+      return;
+    }
+
+    const newMessages: Message[] = [...messages, { role: 'user', content: textToSend }];
+    setMessages(newMessages);
+    setInput('');
+    setSending(true);
+    setChatError(null);
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider, model, apiKey, messages: newMessages, selectedRepo })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to get reply');
+      setMessages([...newMessages, { role: 'assistant', content: data.reply }]);
+    } catch (err: any) {
+      setChatError(err.message);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const fetchModels = async (p: string, key: string) => {
+    if (!key) return;
+    setLoadingModels(true);
+    try {
+      const urls: Record<string, string> = {
+        groq: 'https://api.groq.com/openai/v1/models',
+        openrouter: 'https://openrouter.ai/api/v1/models',
+        deepseek: 'https://api.deepseek.com/models',
+        openai: 'https://api.openai.com/v1/models',
+        anthropic: 'https://api.anthropic.com/v1/models'
+      };
+      const headers: Record<string, string> = { Authorization: `Bearer ${key}` };
+      if (p === 'anthropic') {
+        headers['x-api-key'] = key;
+        headers['anthropic-version'] = '2023-06-01';
+      }
+      const res = await fetch(urls[p], { headers });
+      const data = await res.json();
+      const list = data.data?.map((m: any) => m.id) || [];
+      const filtered = list.filter((m: string) => !m.includes('whisper') && !m.includes('orpheus') && !m.includes('guard') && !m.includes('tts'));
+      setModels(filtered);
+    } catch (e) {
+      console.error(e);
+      setModels([]);
+    } finally {
+      setLoadingModels(false);
+    }
+  };
+
+  const saveSettings = () => {
+    localStorage.setItem('aubin-provider', provider);
+    localStorage.setItem('aubin-model', model);
+    localStorage.setItem('aubin-api-key', apiKey);
+    setSettingsOpen(false);
+  };
+
+  if (loading) {
+    return <div className="h-[100dvh] flex items-center justify-center bg-background text-foreground font-sans">Loading...</div>;
+  }
+
+  if (!user) {
+    return (
+      <div className="h-[100dvh] flex flex-col items-center justify-center bg-background text-foreground px-6">
+        <h1 className="text-4xl font-serif text-accent font-semibold mb-8">Aubin</h1>
+        <a href="/api/auth/login" className="bg-accent text-white px-8 py-3 rounded-lg font-medium font-sans hover:opacity-90">Sign in with GitHub</a>
+      </div>
+    );
+  }
+
+  if (settingsOpen) {
+    return (
+      <div className="h-[100dvh] flex flex-col bg-background text-foreground">
+        <div className="flex-none flex items-center justify-between px-4 py-3 pt-[calc(env(safe-area-inset-top)+12px)] border-b border-muted/10">
+          <button onClick={() => setSettingsOpen(false)} className="text-muted text-xl min-h-[44px] min-w-[44px] flex items-center">✕</button>
+          <h2 className="font-serif text-accent font-semibold text-lg">Settings</h2>
+          <div className="w-11" />
+        </div>
+        
+        <div className="flex-1 overflow-y-auto px-4 pb-24 max-w-2xl mx-auto w-full pt-6">
+          <div className="flex items-center gap-3 mb-8 px-2">
+            <img src={user.avatar_url} alt="avatar" className="w-12 h-12 rounded-full" />
+            <div>
+              <p className="font-sans font-medium text-foreground text-lg">{user.name || user.login}</p>
+              <p className="font-sans text-muted text-sm">@{user.login} · Free</p>
+            </div>
+          </div>
+
+          <h3 className="font-sans text-muted text-xs uppercase tracking-wider mb-3 px-1">Account</h3>
+          <div className="rounded-2xl border border-muted/20 mb-8 overflow-hidden bg-white/50 dark:bg-transparent">
+            <div className="flex items-center justify-between px-4 py-4 border-b border-muted/20">
+              <div className="flex items-center gap-3">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"></path><path d="M9 18c-4.51 2-5-2-7-2"></path></svg>
+                <span className="font-sans text-foreground">GitHub</span>
               </div>
-            )}
+              <span className="font-sans text-muted text-sm">@{user.login}</span>
+            </div>
+            <div className="flex items-center justify-between px-4 py-4">
+              <div className="flex items-center gap-3">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-1.22-1.8A2 2 0 0 0 9.51 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"></path></svg>
+                <span className="font-sans text-foreground">Repositories</span>
+              </div>
+              <select 
+                value={selectedRepo} 
+                onChange={e => { setSelectedRepo(e.target.value); localStorage.setItem('aubin-selected-repo', e.target.value); }} 
+                className="font-sans bg-transparent text-right outline-none max-w-[60%] text-muted text-sm appearance-none"
+              >
+                <option value="">Select repo...</option>
+                {repoList.map(r => <option key={r} value={r}>{r}</option>)}
+              </select>
+            </div>
+          </div>
 
-            {/* Image Attachment Thumbnail Preview */}
-            {attachedImage && (
-              <div className="self-start relative group rounded-2xl overflow-hidden border border-white/20 shadow-lg mb-1">
-                <img src={attachedImage} alt="Attachment preview" className="w-20 h-20 object-cover" />
-                <button
-                  type="button"
-                  onClick={() => setAttachedImage(null)}
-                  className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center text-xs backdrop-blur-sm"
-                  aria-label="Remove attached image"
-                >
-                  ✕
+          <h3 className="font-sans text-muted text-xs uppercase tracking-wider mb-3 px-1">AI</h3>
+          <div className="rounded-2xl border border-muted/20 mb-8 overflow-hidden bg-white/50 dark:bg-transparent">
+            <div className="flex items-center justify-between px-4 py-4 border-b border-muted/20">
+              <div className="flex items-center gap-3">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
+                <span className="font-sans text-foreground">Provider</span>
+              </div>
+              <select value={provider} onChange={e => setProvider(e.target.value)} className="font-sans bg-transparent text-right outline-none text-muted text-sm appearance-none">
+                <option value="groq">Groq</option>
+                <option value="openrouter">OpenRouter</option>
+                <option value="deepseek">DeepSeek</option>
+                <option value="openai">OpenAI</option>
+                <option value="anthropic">Anthropic</option>
+              </select>
+            </div>
+            <div className="flex items-center justify-between px-4 py-4 border-b border-muted/20">
+              <div className="flex items-center gap-3">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"></rect><line x1="8" x2="16" y1="21" y2="21"></line><line x1="12" x2="12" y1="17" y2="21"></line></svg>
+                <span className="font-sans text-foreground">Model</span>
+              </div>
+              {loadingModels ? <span className="font-sans text-muted text-xs">Loading...</span> : (
+                <select value={model} onChange={e => setModel(e.target.value)} className="font-sans bg-transparent text-right outline-none max-w-[60%] text-muted text-sm appearance-none">
+                  <option value="">Select model...</option>
+                  {models.map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
+              )}
+            </div>
+            <div className="flex items-center justify-between px-4 py-4">
+              <div className="flex items-center gap-3">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="7.5" cy="15.5" r="5.5"></circle><path d="m21 2-9.6 9.6"></path><path d="m15.5 7.5 3 3L22 7l-3-3"></path></svg>
+                <span className="font-sans text-foreground">API Key</span>
+              </div>
+              <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} onBlur={() => fetchModels(provider, apiKey)} placeholder="Enter key..." className="font-sans bg-transparent text-right outline-none w-1/2 text-muted text-sm" />
+            </div>
+          </div>
+
+          <h3 className="font-sans text-muted text-xs uppercase tracking-wider mb-3 px-1">App</h3>
+          <div className="rounded-2xl border border-muted/20 mb-8 overflow-hidden bg-white/50 dark:bg-transparent">
+            <div className="flex items-center justify-between px-4 py-4 border-b border-muted/20">
+              <div className="flex items-center gap-3">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>
+                <span className="font-sans text-foreground">Theme</span>
+              </div>
+              <div className="flex gap-1 bg-muted/10 rounded-lg p-1">
+                <button onClick={() => setDark(false)} className={`font-sans px-4 py-1.5 rounded-md text-xs transition-colors ${!dark ? 'bg-accent text-white' : 'text-muted'}`}>Light</button>
+                <button onClick={() => setDark(true)} className={`font-sans px-4 py-1.5 rounded-md text-xs transition-colors ${dark ? 'bg-accent text-white' : 'text-muted'}`}>Dark</button>
+                <button className="font-sans px-4 py-1.5 rounded-md text-xs text-muted">System</button>
+              </div>
+            </div>
+            <div className="flex items-center justify-between px-4 py-4">
+              <div className="flex items-center gap-3">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m5 8 6 6"></path><path d="m4 14 6-6 2-3"></path><path d="M2 5h12"></path><path d="M7 2h1"></path><path d="m22 22-5-10-5 10"></path><path d="M14 18h6"></path></svg>
+                <span className="font-sans text-foreground">Language</span>
+              </div>
+              <span className="font-sans text-muted text-sm flex items-center gap-1">English <span className="text-lg leading-none">⟠</span></span>
+            </div>
+          </div>
+
+          <button onClick={saveSettings} className="font-sans w-full bg-accent text-white py-3 rounded-xl font-medium mb-4 hover:opacity-90">Save Changes</button>
+          <a href="/api/auth/logout" className="font-sans block text-center text-red-500 py-3 mb-4">Sign Out</a>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-[100dvh] flex flex-col bg-background text-foreground relative">
+      
+      {/* Floating Header Buttons */}
+      <div className="fixed top-0 left-0 right-0 z-50 flex justify-between px-4 pt-[calc(env(safe-area-inset-top)+8px)] pointer-events-none">
+        <button onClick={() => setSettingsOpen(true)} className="pointer-events-auto w-11 h-11 rounded-full flex items-center justify-center bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl border border-black/5 dark:border-white/10 shadow-sm text-foreground">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><line x1="3" y1="6" x2="17" y2="6" /><line x1="3" y1="10" x2="17" y2="10" /><line x1="3" y1="14" x2="17" y2="14" /></svg>
+        </button>
+        <button className="pointer-events-auto w-11 h-11 rounded-full flex items-center justify-center bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl border border-black/5 dark:border-white/10 shadow-sm text-foreground">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 10h.01"></path><path d="M15 10h.01"></path><path d="M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z"></path></svg>
+        </button>
+      </div>
+
+      {/* Chat Area */}
+      <div className="flex-1 overflow-y-auto px-4 pt-24 pb-4">
+        {messages.length === 0 ? (
+          <div className="h-full flex flex-col items-center justify-center text-center">
+            <h1 className="text-3xl font-serif text-accent font-semibold">Welcome back, {user.name || user.login}</h1>
+          </div>
+        ) : (
+          <div className="max-w-3xl mx-auto w-full">
+            {messages.map((m, i) => (
+              <div key={i} className={`flex w-full mb-6 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`${m.role === 'user' ? 'bg-accent text-black rounded-2xl px-4 py-3 max-w-[85%]' : 'w-full text-foreground'}`}>
+                  {m.role === 'user' ? (
+                    <p className="whitespace-pre-wrap font-sans text-[15px]">{m.content}</p>
+                  ) : (
+                    <div className="markdown-content font-sans text-[15px] leading-relaxed">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[[rehypePrettyCode, { theme: 'github-dark' }]]}>
+                        {m.content}
+                      </ReactMarkdown>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+            <div ref={messagesEndRef} />
+          </div>
+        )}
+      </div>
+
+      {/* Input Area - True Transparent Background */}
+      <div className="flex-none w-full px-4 pt-2 pb-[calc(env(safe-area-inset-bottom)+12px)] bg-transparent z-10">
+        <div className="max-w-3xl mx-auto w-full">
+          {chatError && <div className="text-red-500 text-sm mb-2 text-center font-sans">{chatError}</div>}
+          
+          <form onSubmit={handleSubmit} className="relative w-full rounded-[32px] bg-white/70 dark:bg-zinc-900/60 backdrop-blur-2xl border border-black/10 dark:border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.15)] flex flex-col p-2">
+            <textarea
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              placeholder="Chat with Aubin"
+              className="w-full bg-transparent border-none outline-none resize-none px-4 py-3 text-[16px] max-h-32 text-foreground placeholder:text-muted focus:ring-0"
+              rows={1}
+            />
+            <div className="flex items-center justify-between mt-1 px-2">
+              <div className="flex items-center gap-2">
+                <button type="button" className="w-10 h-10 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/10 text-foreground shrink-0 transition-colors">
+                  <span className="text-xl leading-none font-light">+</span>
+                </button>
+                <button type="button" onClick={() => setSettingsOpen(true)} className="px-4 py-2.5 rounded-full bg-black/5 dark:bg-white/10 text-xs font-medium text-foreground truncate max-w-[140px] transition-colors font-sans">
+                  {model || 'Select model'}
                 </button>
               </div>
-            )}
-
-            {/* Model Selector Dropdown Popover */}
-            {showModelPicker && (
-              <div className="liquid-glass rounded-2xl p-2 mb-1 max-h-48 overflow-y-auto shadow-2xl z-30">
-                {modelsList.length === 0 ? (
-                  <p className="text-xs text-muted p-2 text-center font-sans">No models loaded. Set API key in Settings.</p>
-                ) : (
-                  modelsList.map(m => (
-                    <button
-                      key={m}
-                      type="button"
-                      onClick={() => {
-                        setModel(m);
-                        setShowModelPicker(false);
-                      }}
-                      className={`w-full text-left px-3 py-2 text-xs rounded-xl font-medium font-sans truncate flex items-center justify-between ${
-                        m === model ? 'bg-accent/15 text-accent font-semibold' : 'text-foreground hover:bg-muted/10'
-                      }`}
-                    >
-                      <span className="truncate">{m}</span>
-                      {m === model && <span>✓</span>}
-                    </button>
-                  ))
-                )}
+              <div className="flex items-center gap-2">
+                <button type="button" className="w-10 h-10 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/10 text-foreground shrink-0 transition-colors">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
+                </button>
+                <button type="submit" disabled={sending || !input.trim()} className="w-10 h-10 rounded-full flex items-center justify-center bg-foreground text-background shrink-0 disabled:opacity-50 transition-colors shadow-sm">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+                </button>
               </div>
-            )}
-
-            {/* Liquid Glass Container Card */}
-            <LiquidGlass className="w-full rounded-[28px]">
-              <div className="p-3 flex flex-col gap-2">
-                {/* Row 1: Top Textarea Input */}
-                <div className="px-1 pt-1">
-                  <textarea
-                    ref={textareaRef}
-                    value={input}
-                    onChange={e => setInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Chat with Aubin"
-                    rows={1}
-                    className="w-full bg-transparent border-0 resize-none text-foreground placeholder:text-muted/60 focus:outline-none text-base font-normal font-sans leading-snug max-h-32"
-                  />
-                </div>
-
-                {/* Row 2: Bottom Control Toolbar */}
-                <div className="flex items-center justify-between pt-1">
-                  {/* Left Controls: Attachment + Model Pill */}
-                  <div className="flex items-center gap-2">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageSelect}
-                      className="hidden"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      aria-label="Attach image"
-                      className="w-10 h-10 rounded-full flex items-center justify-center glass-pill text-foreground shrink-0 font-light text-xl hover:opacity-80 transition-all font-sans"
-                    >
-                      +
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setShowModelPicker(!showModelPicker)}
-                      className="h-10 px-3.5 rounded-full glass-pill flex items-center gap-1.5 text-xs font-medium font-sans text-foreground hover:opacity-80 transition-all truncate max-w-[180px]"
-                    >
-                      <span className="truncate">{displayModelName}</span>
-                      <span className="text-[10px] opacity-60">▼</span>
-                    </button>
-                  </div>
-
-                  {/* Right Controls: Mic + Send Button */}
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setIsMicActive(!isMicActive)}
-                      aria-label="Toggle microphone"
-                      className={`w-10 h-10 rounded-full glass-pill flex items-center justify-center transition-all ${
-                        isMicActive ? 'text-accent bg-accent/20' : 'text-foreground'
-                      }`}
-                    >
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8" />
-                      </svg>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={handleSendMessage}
-                      disabled={sending}
-                      aria-label="Send message"
-                      className="w-10 h-10 rounded-full bg-black dark:bg-white text-white dark:text-black flex items-center justify-center font-bold hover:opacity-90 active:scale-95 transition-all shadow-md disabled:opacity-50 font-sans"
-                    >
-                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 3v10.5m0-10.5L7.5 7.5M12 3l4.5 4.5M6 18h12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </LiquidGlass>
-
-          </div>
+            </div>
+          </form>
         </div>
-      )}
+      </div>
+
     </div>
   );
 }
