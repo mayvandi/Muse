@@ -494,7 +494,7 @@ export default function App() {
           )}
 
           {/* KOTAK INPUT KACA (Lebih terang, tidak gelap saat ada kode di belakangnya) */}
-          <form onSubmit={handleSendMessage} className="relative w-full rounded-[32px] bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl backdrop-brightness-125 border border-black/10 dark:border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.2)] flex flex-col p-2">
+          <form onSubmit={handleSendMessage} className="relative w-full rounded-[32px] border border-black/10 dark:border-white/10 flex flex-col p-2">
             <div className="px-1 pt-1">
               <textarea
                 ref={textareaRef}
