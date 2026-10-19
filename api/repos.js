@@ -6,7 +6,7 @@ export default async function handler(req, res) {
   if (!token) return res.status(401).json({ error: 'No token' });
 
   try {
-    const ghRes = await fetch('https://api.github.com/user/repos?per_page=100&sort=updated', {
+    const ghRes = await fetch('https://api.github.com/user/repos?per_page=100&sort=updated&visibility=all&affiliation=owner,collaborator,organization_member', {
       headers: { Authorization: `Bearer ${token}`, 'User-Agent': 'Aubin-App', Accept: 'application/vnd.github+json' }
     });
     const data = await ghRes.json();
