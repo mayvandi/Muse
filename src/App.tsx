@@ -1,5 +1,4 @@
 import { Component, ErrorInfo, ReactNode, useEffect, useRef, useState } from 'react';
-import { LiquidGlassView as LiquidGlass } from '@zerocoder1/liquid-glass/react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
@@ -751,7 +750,7 @@ export default function App() {
 
             {/* Model Selector Dropdown Popover */}
             {showModelPicker && (
-              <div className="liquid-glass rounded-2xl p-2 mb-1 max-h-48 overflow-y-auto shadow-2xl z-30">
+              <div className="bg-surface rounded-2xl p-2 mb-1 max-h-48 overflow-y-auto shadow-2xl border border-line z-30">
                 {modelsList.length === 0 ? (
                   <p className="text-xs text-muted p-2 text-center font-sans">No models loaded. Set API key in Settings.</p>
                 ) : (
@@ -775,83 +774,86 @@ export default function App() {
               </div>
             )}
 
-            {/* Liquid Glass Container Card */}
-            <LiquidGlass className="w-full rounded-[28px]">
-              <div className="p-3 flex flex-col gap-2">
-                {/* Row 1: Top Textarea Input */}
-                <div className="px-1 pt-1">
-                  <textarea
-                    ref={textareaRef}
-                    value={input}
-                    onChange={e => setInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Chat with Aubin"
-                    rows={1}
-                    className="w-full bg-transparent border-0 resize-none text-foreground placeholder:text-muted/60 focus:outline-none text-base font-normal font-sans leading-snug max-h-32"
+            {/* Solid Card Container Form */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSendMessage();
+              }}
+              className="w-full rounded-[28px] bg-surface border border-line shadow-lg transition-colors p-3 flex flex-col gap-2"
+            >
+              {/* Row 1: Top Textarea Input */}
+              <div className="px-1 pt-1">
+                <textarea
+                  ref={textareaRef}
+                  value={input}
+                  onChange={e => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Chat with Aubin"
+                  rows={1}
+                  className="w-full bg-transparent border-0 resize-none text-foreground placeholder:text-muted/60 focus:outline-none text-base font-normal font-sans leading-snug max-h-32"
+                />
+              </div>
+
+              {/* Row 2: Bottom Control Toolbar */}
+              <div className="flex items-center justify-between pt-1">
+                {/* Left Controls: Attachment + Model Pill */}
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageSelect}
+                    className="hidden"
                   />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    aria-label="Attach image"
+                    className="w-10 h-10 rounded-full flex items-center justify-center glass-pill text-foreground shrink-0 font-light text-xl hover:opacity-80 transition-all font-sans"
+                  >
+                    +
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowModelPicker(!showModelPicker)}
+                    className="h-10 px-3.5 rounded-full glass-pill flex items-center gap-1.5 text-xs font-medium font-sans text-foreground hover:opacity-80 transition-all truncate max-w-[180px]"
+                  >
+                    <span className="truncate">{displayModelName}</span>
+                    <span className="text-[10px] opacity-60">▼</span>
+                  </button>
                 </div>
 
-                {/* Row 2: Bottom Control Toolbar */}
-                <div className="flex items-center justify-between pt-1">
-                  {/* Left Controls: Attachment + Model Pill */}
-                  <div className="flex items-center gap-2">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageSelect}
-                      className="hidden"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      aria-label="Attach image"
-                      className="w-10 h-10 rounded-full flex items-center justify-center glass-pill text-foreground shrink-0 font-light text-xl hover:opacity-80 transition-all font-sans"
-                    >
-                      +
-                    </button>
+                {/* Right Controls: Mic + Send Button */}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsMicActive(!isMicActive)}
+                    aria-label="Toggle microphone"
+                    className={`w-10 h-10 rounded-full glass-pill flex items-center justify-center transition-all ${
+                      isMicActive ? 'text-accent bg-accent/20' : 'text-foreground'
+                    }`}
+                  >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8" />
+                    </svg>
+                  </button>
 
-                    <button
-                      type="button"
-                      onClick={() => setShowModelPicker(!showModelPicker)}
-                      className="h-10 px-3.5 rounded-full glass-pill flex items-center gap-1.5 text-xs font-medium font-sans text-foreground hover:opacity-80 transition-all truncate max-w-[180px]"
-                    >
-                      <span className="truncate">{displayModelName}</span>
-                      <span className="text-[10px] opacity-60">▼</span>
-                    </button>
-                  </div>
-
-                  {/* Right Controls: Mic + Send Button */}
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setIsMicActive(!isMicActive)}
-                      aria-label="Toggle microphone"
-                      className={`w-10 h-10 rounded-full glass-pill flex items-center justify-center transition-all ${
-                        isMicActive ? 'text-accent bg-accent/20' : 'text-foreground'
-                      }`}
-                    >
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8" />
-                      </svg>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={handleSendMessage}
-                      disabled={sending}
-                      aria-label="Send message"
-                      className="w-10 h-10 rounded-full bg-black dark:bg-white text-white dark:text-black flex items-center justify-center font-bold hover:opacity-90 active:scale-95 transition-all shadow-md disabled:opacity-50 font-sans"
-                    >
-                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 3v10.5m0-10.5L7.5 7.5M12 3l4.5 4.5M6 18h12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                      </svg>
-                    </button>
-                  </div>
+                  <button
+                    type="submit"
+                    disabled={sending}
+                    aria-label="Send message"
+                    className="w-10 h-10 rounded-full bg-black dark:bg-white text-white dark:text-black flex items-center justify-center font-bold hover:opacity-90 active:scale-95 transition-all shadow-md disabled:opacity-50 font-sans"
+                  >
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 3v10.5m0-10.5L7.5 7.5M12 3l4.5 4.5M6 18h12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                    </svg>
+                  </button>
                 </div>
               </div>
-            </LiquidGlass>
+            </form>
 
           </div>
         </div>
