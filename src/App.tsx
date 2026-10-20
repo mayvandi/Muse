@@ -630,7 +630,7 @@ export default function App() {
       )}
 
       {/* Main Chat Area */}
-      <main className="flex-1 overflow-y-auto px-4 py-4 pt-24 pb-[120px] flex flex-col items-center justify-center">
+      <main className="flex-1 overflow-y-auto px-4 py-4 pt-24 pb-36 flex flex-col items-center justify-center">
         {loading ? (
           <p className="text-muted text-sm">Loading...</p>
         ) : !user ? (
@@ -722,20 +722,20 @@ export default function App() {
             boxShadow: 'none',
             border: 'none',
           }}
-          className="flex-none w-full px-4 pt-2 pb-[calc(env(safe-area-inset-bottom)+12px)] !bg-transparent z-10"
+          className="fixed bottom-0 left-0 right-0 z-20 pointer-events-none px-4 pt-2 pb-[calc(env(safe-area-inset-bottom)+12px)] !bg-transparent"
         >
           <div className="w-full max-w-xl mx-auto relative flex flex-col gap-2">
 
             {/* Red Error Banner */}
             {chatError && (
-              <div className="bg-red-500/10 text-red-500 border border-red-500/20 text-xs px-3 py-2 rounded-xl mb-1 text-center font-medium font-sans animate-fade-in">
+              <div className="pointer-events-auto bg-red-500/10 text-red-500 border border-red-500/20 text-xs px-3 py-2 rounded-xl mb-1 text-center font-medium font-sans animate-fade-in">
                 {chatError}
               </div>
             )}
 
             {/* Image Attachment Thumbnail Preview */}
             {attachedImage && (
-              <div className="self-start relative group rounded-2xl overflow-hidden border border-white/20 shadow-lg mb-1">
+              <div className="pointer-events-auto self-start relative group rounded-2xl overflow-hidden border border-white/20 shadow-lg mb-1">
                 <img src={attachedImage} alt="Attachment preview" className="w-20 h-20 object-cover" />
                 <button
                   type="button"
@@ -750,7 +750,7 @@ export default function App() {
 
             {/* Model Selector Dropdown Popover */}
             {showModelPicker && (
-              <div className="bg-surface rounded-2xl p-2 mb-1 max-h-48 overflow-y-auto shadow-2xl border border-line z-30">
+              <div className="pointer-events-auto bg-surface rounded-2xl p-2 mb-1 max-h-48 overflow-y-auto shadow-2xl border border-line z-30">
                 {modelsList.length === 0 ? (
                   <p className="text-xs text-muted p-2 text-center font-sans">No models loaded. Set API key in Settings.</p>
                 ) : (
@@ -780,7 +780,7 @@ export default function App() {
                 e.preventDefault();
                 handleSendMessage();
               }}
-              className="w-full rounded-[28px] bg-surface border border-line shadow-lg transition-colors p-3 flex flex-col gap-2"
+              className="pointer-events-auto w-full rounded-[28px] bg-surface border border-line shadow-xl transition-colors p-3 flex flex-col gap-2"
             >
               {/* Row 1: Top Textarea Input */}
               <div className="px-1 pt-1">
