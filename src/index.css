@@ -10,7 +10,7 @@
   --line: #E8E4DD;
   --accent: #C96442;
 
-  --glass-bg: transparent;
+  --glass-bg: rgba(255, 255, 255, 0.75);
   --glass-border: rgba(255, 255, 255, 0.6);
   --glass-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.04);
   --glass-inner-glow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.8);
