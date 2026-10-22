@@ -774,13 +774,13 @@ export default function App() {
               </div>
             )}
 
-            {/* Solid Card Container Form */}
+            {/* Liquid Glass Container Form */}
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 handleSendMessage();
               }}
-              className="pointer-events-auto w-full rounded-[28px] bg-surface border border-line shadow-xl transition-colors p-3 flex flex-col gap-2"
+              className="pointer-events-auto w-full rounded-[28px] liquid-glass transition-colors p-3 flex flex-col gap-2"
             >
               {/* Row 1: Top Textarea Input */}
               <div className="px-1 pt-1">
