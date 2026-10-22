@@ -722,9 +722,9 @@ export default function App() {
             boxShadow: 'none',
             border: 'none',
           }}
-          className="fixed bottom-0 left-0 right-0 z-20 pointer-events-none px-4 pt-2 pb-[calc(env(safe-area-inset-bottom)+12px)] !bg-transparent"
+          className="fixed bottom-0 left-0 right-0 z-20 pointer-events-none p-0 !bg-transparent"
         >
-          <div className="w-full max-w-xl mx-auto relative flex flex-col gap-2">
+          <div className="w-full max-w-xl mx-auto relative flex flex-col gap-2 px-4 mb-[calc(env(safe-area-inset-bottom)+12px)]">
 
             {/* Red Error Banner */}
             {chatError && (
